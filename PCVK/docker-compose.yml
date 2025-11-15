@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vegetable-classification-api
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount models directory untuk mengakses model yang sudah ditraining
+      - ./models:/app/models:ro
+      # Mount api directory untuk hot-reload saat development (opsional)
+      # - ./api:/app/api
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # Uncomment jika ingin menggunakan GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
