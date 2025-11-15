@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'edit_data_mutasi_page.dart';
 
 class DetailDataMutasiPage extends StatelessWidget {
-  const DetailDataMutasiPage({super.key});
+  final Map<String, dynamic>? mutasiData;
+  
+  const DetailDataMutasiPage({super.key, this.mutasiData});
 
   @override
   Widget build(BuildContext context) {
@@ -43,18 +45,13 @@ class DetailDataMutasiPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailField("Nama Lengkap", "Rendha Putra Rahmadya"),
-            _buildDetailField("NIK", "3505111512040002"),
-            _buildDetailField("Jenis Mutasi", "Mutasi Masuk"),
-            _buildDetailField("Tanggal Mutasi", "21/10/2023"),
-            _buildDetailField("Alamat Asal/Tujuan", "Surabaya"),
-            _buildDetailField("Alasan Mutasi", "Pindah Kerja"),
-            _buildDetailField("Status Mutasi", "Selesai"),
-            _buildDetailField("Nomor Surat Pengantar", "123/RT/X/2023"),
-            _buildDetailField(
-              "Keterangan",
-              "Mutasi karena pindah tempat kerja ke Malang",
-            ),
+            _buildDetailField("Nama Lengkap", mutasiData?['nama'] ?? "Rendha Putra Rahmadya"),
+            _buildDetailField("NIK", mutasiData?['nik'] ?? "3505111512040002"),
+            _buildDetailField("Jenis Mutasi", mutasiData?['jenis'] ?? "Mutasi Masuk"),
+            _buildDetailField("Tanggal Mutasi", mutasiData?['tanggal'] ?? "21/10/2023"),
+            _buildDetailField("Alamat Asal", mutasiData?['alamatAsal'] ?? "Jakarta"),
+            _buildDetailField("Alamat Tujuan", mutasiData?['alamatTujuan'] ?? "Surabaya"),
+            _buildDetailField("Alasan Mutasi", mutasiData?['alasan'] ?? "Pindah Kerja"),
           ],
         ),
       ),

@@ -10,7 +10,7 @@ class JawaraApp extends StatelessWidget {
     return MaterialApp(
       title: 'Jawara',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      theme: AppTheme.lightTheme,
       home: const SplashPage(),
     );
   }

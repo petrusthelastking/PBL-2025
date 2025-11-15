@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class DetailPenggunaPage extends StatelessWidget {
-  const DetailPenggunaPage({super.key});
+  final Map<String, dynamic>? userData;
+  
+  const DetailPenggunaPage({super.key, this.userData});
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +118,7 @@ class DetailPenggunaPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2F80ED).withOpacity(0.1),
+                              color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -169,7 +171,7 @@ class DetailPenggunaPage extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2F80ED).withOpacity(0.1),
+                              color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(
@@ -223,7 +225,7 @@ class DetailPenggunaPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2F80ED).withOpacity(0.1),
+                        color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -281,7 +283,7 @@ class DetailPenggunaPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2F80ED).withOpacity(0.1),
+                        color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -339,7 +341,7 @@ class DetailPenggunaPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2F80ED).withOpacity(0.1),
+                        color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(

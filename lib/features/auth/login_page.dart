@@ -2,8 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:jawara/features/dashboard/dashboard_page.dart';
 import 'package:jawara/features/auth/register_page.dart';
+import 'package:jawara/core/providers/auth_provider.dart';
 
 const Color _kLoginAccent = Color(0xFF2F80ED);
 
@@ -105,7 +107,6 @@ class _LoginBody extends StatelessWidget {
                 SizedBox(height: 28),
                 _LoginFields(),
                 SizedBox(height: 32),
-                _SignupPrompt(),
                 SizedBox(height: 16),
               ],
             ),
@@ -198,27 +199,183 @@ class _LoginIntro extends StatelessWidget {
             color: const Color(0xFF777C8E),
           ),
         ),
+        const SizedBox(height: 16),
+        // Default credentials info
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F7FF),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _kLoginAccent.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: _kLoginAccent,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Kredensial Default:',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _kLoginAccent,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Email: admin@jawara.com',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: const Color(0xFF555555),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Password: admin123',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: const Color(0xFF555555),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 }
 
-class _LoginFields extends StatelessWidget {
+class _LoginFields extends StatefulWidget {
   const _LoginFields();
 
-  InputDecoration _decoration(String label) {
+  @override
+  State<_LoginFields> createState() => _LoginFieldsState();
+}
+
+class _LoginFieldsState extends State<_LoginFields> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    final success = await authProvider.signIn(
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (success) {
+      // Check user status
+      final user = authProvider.userModel;
+
+      if (user?.status == 'pending') {
+        _showErrorDialog(
+          'Menunggu Persetujuan',
+          'Akun Anda masih menunggu persetujuan dari admin. Silakan hubungi admin untuk informasi lebih lanjut.',
+        );
+        await authProvider.signOut();
+        return;
+      }
+
+      if (user?.status == 'rejected') {
+        _showErrorDialog(
+          'Akun Ditolak',
+          'Akun Anda ditolak oleh admin. Silakan hubungi admin untuk informasi lebih lanjut.',
+        );
+        await authProvider.signOut();
+        return;
+      }
+
+      // Login success
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const DashboardPage()),
+        (route) => false,
+      );
+    } else {
+      // Show error
+      _showErrorDialog(
+        'Login Gagal',
+        authProvider.errorMessage ?? 'Terjadi kesalahan saat login',
+      );
+    }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          title,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          message,
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'OK',
+              style: GoogleFonts.poppins(color: _kLoginAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String label, {Widget? suffixIcon}) {
     return InputDecoration(
       hintText: label,
       hintStyle: GoogleFonts.poppins(
         fontSize: 13,
         color: const Color(0xFFB0B3C0),
       ),
+      suffixIcon: suffixIcon,
       floatingLabelBehavior: FloatingLabelBehavior.never,
       enabledBorder: const UnderlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE2E4EC), width: 1.4),
       ),
       focusedBorder: const UnderlineInputBorder(
         borderSide: BorderSide(color: _kLoginAccent, width: 1.6),
+      ),
+      errorBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.red, width: 1.4),
+      ),
+      focusedErrorBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.red, width: 1.6),
       ),
       border: const UnderlineInputBorder(
         borderSide: BorderSide(color: Color(0xFFE2E4EC)),
@@ -229,66 +386,116 @@ class _LoginFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          textInputAction: TextInputAction.next,
-          decoration: _decoration('Username'),
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-        const SizedBox(height: 24),
-        TextField(
-          obscureText: true,
-          decoration: _decoration('Password'),
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'Lupa Kata sandi?',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: _kLoginAccent,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
-        SizedBox(
-          height: 52,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _kLoginAccent,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(26),
-              ),
-              textStyle: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (_) => const DashboardPage()),
-                (route) => false,
-              );
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            decoration: _decoration('Email'),
+            style: GoogleFonts.poppins(fontSize: 14),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Email tidak boleh kosong';
+              }
+              if (!value.contains('@')) {
+                return 'Email tidak valid';
+              }
+              return null;
             },
-            child: const Text('Login'),
           ),
-        ),
-        const SizedBox(height: 24),
-      ],
+          const SizedBox(height: 24),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            decoration: _decoration(
+              'Password',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: const Color(0xFFB0B3C0),
+                  size: 20,
+                ),
+                onPressed: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
+            ),
+            style: GoogleFonts.poppins(fontSize: 14),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Password tidak boleh kosong';
+              }
+              if (value.length < 6) {
+                return 'Password minimal 6 karakter';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                // TODO: Implement forgot password
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Fitur lupa password belum tersedia',
+                      style: GoogleFonts.poppins(),
+                    ),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'Lupa Kata sandi?',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: _kLoginAccent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kLoginAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+                textStyle: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              onPressed: _isLoading ? null : _handleLogin,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Login'),
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
     );
   }
 }

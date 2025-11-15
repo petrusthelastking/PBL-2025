@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "693556950050",
+    "project_id": "pbl-2025-35a1c",
+    "storage_bucket": "pbl-2025-35a1c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693556950050:android:b423fda38e661196b0067b",
+        "android_client_info": {
+          "package_name": "com.example.jawara"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD96pspshH9zDowI-Ka_VFZHKd0K5XlvfM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isPetugas() {
+      return isSignedIn() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'petugas';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Allow read for ANYONE (needed for login verification)
+      // User belum authenticated saat login, jadi harus allow true
+      allow read: if true;
+
+      // Allow create for ANYONE (for registration) - IMPORTANT for sign up
+      allow create: if true;
+      
+      // Allow update for owner or admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Allow delete for admin only
+      allow delete: if isAdmin();
+    }
+
+    // Warga collection
+    match /warga/{wargaId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isPetugas();
+    }
+
+    // Agenda collection
+    match /agenda/{agendaId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isPetugas();
+    }
+
+    // Keuangan collection
+    match /keuangan/{transactionId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isPetugas();
+    }
+
+    // Mutasi warga collection
+    match /mutasi_warga/{mutasiId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isPetugas();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow write: if isAdmin() || isPetugas();
+    }
+  }
+}
+
