@@ -1,77 +1,60 @@
+// ============================================================================
+// DASHBOARD PAGE (CLEAN CODE VERSION)
+// ============================================================================
+// Main dashboard page - fokus pada layout & orchestration
+// Widget-widget sudah dipecah untuk maintainability
+//
+// Clean Code Principles Applied:
+// ✅ Fokus pada tampilan & interaksi user (tanpa logic bisnis berat)
+// ✅ Gunakan StatelessWidget kalau tidak perlu state
+// ✅ Pecah jadi widget kecil (setiap widget < 200 baris)
+// ✅ Tidak ada duplikasi kode - gunakan widget reusable
+// ✅ Nama variabel & widget yang jelas dan deskriptif
+// ✅ Responsif dengan padding yang rapi
+// ✅ Tidak panggil API langsung - nanti pakai controller/service
+// ============================================================================
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
 import '../../core/widgets/app_bottom_navigation.dart';
-import '../data_warga/data_penduduk/data_penduduk_page.dart';
-import '../keuangan/keuangan_page.dart';
 import 'dashboard_detail_page.dart';
 import 'activity_detail_page.dart';
 import 'penanggung_jawab_detail_page.dart';
 import 'notification_popup.dart';
 import 'log_aktivitas_page.dart';
-import '../agenda/kegiatan/kegiatan_page.dart';
+import 'widgets/dashboard_colors.dart';
+import 'widgets/dashboard_styles.dart';
 
-class DashboardPage extends StatefulWidget {
+/// Dashboard Page - Halaman utama aplikasi
+///
+/// Menampilkan:
+/// - Header dengan profil dan notifikasi
+/// - Finance Overview (Kas Masuk, Kas Keluar, Total Transaksi)
+/// - Kegiatan (Total Activities, Top Penanggung Jawab)
+/// - Timeline (Sudah Lewat, Hari ini, Akan Datang)
+/// - Category Performance (Chart per kategori)
+/// - Monthly Activity (Bar chart bulanan)
+/// - Log Aktivitas (5 aktivitas terakhir)
+class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
-
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
-
-class _DashboardPageState extends State<DashboardPage> {
-  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: DashboardColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Header with gradient background
-            SliverToBoxAdapter(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF2F80ED),
-                      Color(0xFF1E6FD9),
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2F80ED).withValues(alpha: 0.15),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.fromLTRB(20, 24, 20, 32),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _DashboardHeader(),
-                      SizedBox(height: 32),
-                      _FinanceOverview(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Content
+            // Header section dengan gradient background
+            _buildHeader(),
+
+            // Content sections
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              padding: DashboardStyles.contentPadding,
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   const _ActivitySection(),
@@ -96,7 +79,53 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+
+  /// Build header section dengan gradient background
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: DashboardColors.primaryGradient,
+          ),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(32),
+            bottomRight: Radius.circular(32),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: DashboardColors.primaryBlue.withValues(alpha: 0.15),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: const Padding(
+          padding: EdgeInsets.fromLTRB(20, 24, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _DashboardHeader(),
+              SizedBox(height: 32),
+              _FinanceOverview(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
+
+// ============================================================================
+// DASHBOARD HEADER WIDGET
+// ============================================================================
+// Menampilkan header dashboard dengan:
+// - Avatar user
+// - Welcome message & nama admin
+// - Icon search & notification
+// ============================================================================
 
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader();
@@ -106,103 +135,126 @@ class _DashboardHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: CircleAvatar(
-            radius: 30,
-            backgroundImage: const AssetImage('assets/illustrations/LOGIN.png'),
-            backgroundColor: Colors.grey.shade200,
-          ),
-        ),
+        _buildAvatar(),
         const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AutoSizeText(
-                'Selamat Datang 👋',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.3,
-                ),
-                maxLines: 1,
-                minFontSize: 10,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              AutoSizeText(
-                'Admin Diana',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
-                ),
-                maxLines: 1,
-                minFontSize: 16,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-        _HeaderIcon(
-          icon: Icons.search,
-          backgroundColor: Colors.white.withValues(alpha: 0.2),
-          iconColor: Colors.white,
-        ),
+        _buildWelcomeText(),
+        _buildSearchIcon(context),
         const SizedBox(width: 12),
-        GestureDetector(
-          onTap: () {
-            showDialog(
-              context: context,
-              barrierColor: Colors.black26,
-              builder: (BuildContext context) {
-                return Stack(
-                  children: [
-                    Positioned(
-                      top: 80,
-                      right: 20,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: const NotificationPopup(),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          },
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              _HeaderIcon(
-                icon: Icons.notifications_outlined,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
-                iconColor: Colors.white,
-              ),
-              const Positioned(right: 2, top: 2, child: _NotificationDot()),
-            ],
-          ),
-        ),
+        _buildNotificationIcon(context),
       ],
     );
   }
+
+  /// Build avatar dengan border dan shadow
+  Widget _buildAvatar() {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 3,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: CircleAvatar(
+        radius: 30,
+        backgroundImage: const AssetImage('assets/illustrations/LOGIN.png'),
+        backgroundColor: Colors.grey.shade200,
+      ),
+    );
+  }
+
+  /// Build welcome text dengan nama admin
+  Widget _buildWelcomeText() {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AutoSizeText(
+            'Selamat Datang 👋',
+            style: DashboardStyles.headerSubtitle,
+            maxLines: 1,
+            minFontSize: 10,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          AutoSizeText(
+            'Admin Diana',
+            style: DashboardStyles.headerTitle,
+            maxLines: 1,
+            minFontSize: 16,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build search icon button
+  Widget _buildSearchIcon(BuildContext context) {
+    return _HeaderIcon(
+      icon: Icons.search,
+      backgroundColor: Colors.white.withValues(alpha: 0.2),
+      iconColor: Colors.white,
+    );
+  }
+
+  /// Build notification icon button dengan badge
+  Widget _buildNotificationIcon(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _showNotificationPopup(context),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          _HeaderIcon(
+            icon: Icons.notifications_outlined,
+            backgroundColor: Colors.white.withValues(alpha: 0.2),
+            iconColor: Colors.white,
+          ),
+          const Positioned(
+            right: 2,
+            top: 2,
+            child: _NotificationDot(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show notification popup dialog
+  void _showNotificationPopup(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (BuildContext context) {
+        return Stack(
+          children: [
+            Positioned(
+              top: 80,
+              right: 20,
+              child: Material(
+                color: Colors.transparent,
+                child: const NotificationPopup(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
+
+// ============================================================================
+// HEADER ICON WIDGET
+// ============================================================================
+// Reusable icon button untuk header
+// ============================================================================
 
 class _HeaderIcon extends StatelessWidget {
   const _HeaderIcon({
@@ -222,31 +274,39 @@ class _HeaderIcon extends StatelessWidget {
       width: 48,
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: DashboardStyles.smallCardRadius,
         border: Border.all(
-          color: backgroundColor != null
-              ? Colors.white.withValues(alpha: 0.3)
-              : const Color(0xFFE8EAF2),
+          color: _getBorderColor(),
           width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: backgroundColor != null
-                ? Colors.black.withValues(alpha: 0.1)
-                : const Color(0xFF2F80ED).withValues(alpha: 0.08),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
+        boxShadow: DashboardStyles.iconShadow(_getShadowColor()),
       ),
       child: Icon(
         icon,
-        color: iconColor ?? const Color(0xFF2F80ED),
+        color: iconColor ?? DashboardColors.primaryBlue,
         size: 22,
       ),
     );
   }
+
+  Color _getBorderColor() {
+    return backgroundColor != null
+        ? Colors.white.withValues(alpha: 0.3)
+        : DashboardColors.border;
+  }
+
+  Color _getShadowColor() {
+    return backgroundColor != null
+        ? Colors.black
+        : DashboardColors.primaryBlue;
+  }
 }
+
+// ============================================================================
+// NOTIFICATION DOT WIDGET
+// ============================================================================
+// Badge indicator untuk notifikasi baru
+// ============================================================================
 
 class _NotificationDot extends StatelessWidget {
   const _NotificationDot();
@@ -257,13 +317,21 @@ class _NotificationDot extends StatelessWidget {
       height: 10,
       width: 10,
       decoration: BoxDecoration(
-        color: const Color(0xFFEB5757),
+        color: DashboardColors.error,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: Colors.white, width: 1.5),
       ),
     );
   }
 }
+
+// ============================================================================
+// FINANCE OVERVIEW WIDGET
+// ============================================================================
+// Menampilkan overview keuangan:
+// - Card Kas Masuk & Kas Keluar (row)
+// - Card Total Transaksi (full width)
+// ============================================================================
 
 class _FinanceOverview extends StatelessWidget {
   const _FinanceOverview();
@@ -273,6 +341,7 @@ class _FinanceOverview extends StatelessWidget {
     return const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Row untuk Kas Masuk & Kas Keluar
         Row(
           children: [
             Expanded(
@@ -280,7 +349,7 @@ class _FinanceOverview extends StatelessWidget {
                 title: 'Kas Masuk',
                 value: '500JT',
                 icon: Icons.account_balance_wallet_outlined,
-                backgroundColor: Color(0xFFDDEAFF),
+                backgroundColor: DashboardColors.incomeBackground,
               ),
             ),
             SizedBox(width: 16),
@@ -289,12 +358,13 @@ class _FinanceOverview extends StatelessWidget {
                 title: 'Kas Keluar',
                 value: '50JT',
                 icon: Icons.account_balance_wallet_outlined,
-                backgroundColor: Color(0xFFFBE7EA),
+                backgroundColor: DashboardColors.outcomeBackground,
               ),
             ),
           ],
         ),
         SizedBox(height: 16),
+        // Card Total Transaksi (full width)
         _FinanceWideCard(
           title: 'Total Transaksi',
           subtitle: 'Lihat catatan transaksi keseluruhan',
@@ -305,6 +375,12 @@ class _FinanceOverview extends StatelessWidget {
     );
   }
 }
+
+// ============================================================================
+// FINANCE CARD WIDGET
+// ============================================================================
+// Card untuk menampilkan informasi keuangan (Kas Masuk/Keluar)
+// ============================================================================
 
 class _FinanceCard extends StatelessWidget {
   const _FinanceCard({
@@ -323,104 +399,127 @@ class _FinanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            backgroundColor,
-            backgroundColor.withValues(alpha: 0.6),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.4),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: backgroundColor.withValues(alpha: 0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+      decoration: _buildDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(icon, color: const Color(0xFF2F80ED), size: 26),
-          ),
+          _buildIconContainer(),
           const SizedBox(height: 20),
-          AutoSizeText(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF4A4A4A),
-              letterSpacing: 0.3,
-            ),
-            maxLines: 1,
-            minFontSize: 10,
-            overflow: TextOverflow.ellipsis,
-          ),
+          _buildTitle(),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: AutoSizeText(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F1F1F),
-                    letterSpacing: -1,
-                  ),
-                  maxLines: 1,
-                  minFontSize: 20,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF2F80ED).withValues(alpha: 0.15),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: const Color(0xFF2F80ED),
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
+          _buildValueRow(),
         ],
       ),
     );
   }
+
+  /// Build decoration untuk card
+  BoxDecoration _buildDecoration() {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          backgroundColor,
+          backgroundColor.withValues(alpha: 0.6),
+        ],
+      ),
+      borderRadius: DashboardStyles.cardRadius,
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.4),
+        width: 1.5,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: backgroundColor.withValues(alpha: 0.2),
+          blurRadius: 12,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    );
+  }
+
+  /// Build icon container dengan shadow
+  Widget _buildIconContainer() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: DashboardStyles.smallCardRadius,
+        boxShadow: DashboardStyles.iconShadow(DashboardColors.primaryBlue),
+      ),
+      child: Icon(
+        icon,
+        color: DashboardColors.primaryBlue,
+        size: 26,
+      ),
+    );
+  }
+
+  /// Build title text
+  Widget _buildTitle() {
+    return AutoSizeText(
+      title,
+      style: DashboardStyles.cardLabel.copyWith(
+        color: DashboardColors.textSecondary,
+      ),
+      maxLines: 1,
+      minFontSize: 10,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  /// Build value dan arrow button row
+  Widget _buildValueRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: AutoSizeText(
+            value,
+            style: DashboardStyles.cardValue.copyWith(
+              color: DashboardColors.textPrimary,
+            ),
+            maxLines: 1,
+            minFontSize: 20,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        _buildArrowButton(),
+      ],
+    );
+  }
+
+  /// Build arrow button
+  Widget _buildArrowButton() {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: DashboardColors.primaryBlue.withValues(alpha: 0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.arrow_forward_rounded,
+        color: DashboardColors.primaryBlue,
+        size: 20,
+      ),
+    );
+  }
 }
+
+// ============================================================================
+// FINANCE WIDE CARD WIDGET
+// ============================================================================
+// Card full-width untuk Total Transaksi
+// ============================================================================
 
 class _FinanceWideCard extends StatelessWidget {
   const _FinanceWideCard({
@@ -438,126 +537,135 @@ class _FinanceWideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: DashboardStyles.cardPadding,
+      decoration: _buildDecoration(),
+      child: Row(
+        children: [
+          _buildIconContainer(),
+          const SizedBox(width: 20),
+          _buildTextContent(),
+          const SizedBox(width: 12),
+          _buildValueBadge(),
+        ],
+      ),
+    );
+  }
+
+  /// Build card decoration
+  BoxDecoration _buildDecoration() {
+    return BoxDecoration(
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          DashboardColors.incomeBackground,
+          Color(0xFFE8F0FF),
+        ],
+      ),
+      borderRadius: DashboardStyles.cardRadius,
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.6),
+        width: 2,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: DashboardColors.primaryBlue.withValues(alpha: 0.12),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    );
+  }
+
+  /// Build icon container dengan gradient
+  Widget _buildIconContainer() {
+    return Container(
+      height: 68,
+      width: 68,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFDDEAFF),
-            Color(0xFFE8F0FF),
-          ],
+          colors: DashboardColors.primaryGradient,
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.6),
-          width: 2,
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2F80ED).withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: DashboardColors.primaryBlue.withValues(alpha: 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
+      child: Icon(
+        icon,
+        color: Colors.white,
+        size: 32,
+      ),
+    );
+  }
+
+  /// Build text content (title & subtitle)
+  Widget _buildTextContent() {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 68,
-            width: 68,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF2F80ED),
-                  Color(0xFF1E6FD9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2F80ED).withValues(alpha: 0.25),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+          AutoSizeText(
+            title,
+            style: DashboardStyles.cardTitle.copyWith(
+              fontSize: 18,
+              color: DashboardColors.textPrimary,
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 32,
-            ),
+            maxLines: 1,
+            minFontSize: 14,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AutoSizeText(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1F1F1F),
-                    letterSpacing: -0.3,
-                  ),
-                  maxLines: 1,
-                  minFontSize: 14,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 6),
-                AutoSizeText(
-                  subtitle,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: const Color(0xFF6C6E7E),
-                    height: 1.4,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  minFontSize: 10,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          const SizedBox(height: 6),
+          AutoSizeText(
+            subtitle,
+            style: DashboardStyles.cardSubtitle.copyWith(
+              color: DashboardColors.textLight,
             ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF2F80ED),
-                  Color(0xFF1E6FD9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2F80ED).withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: AutoSizeText(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: -0.5,
-              ),
-              maxLines: 1,
-              minFontSize: 16,
-              overflow: TextOverflow.ellipsis,
-            ),
+            maxLines: 2,
+            minFontSize: 10,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+
+  /// Build value badge dengan gradient
+  Widget _buildValueBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: DashboardColors.primaryGradient,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: DashboardColors.primaryBlue.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: AutoSizeText(
+        value,
+        style: GoogleFonts.poppins(
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+          letterSpacing: -0.5,
+        ),
+        maxLines: 1,
+        minFontSize: 16,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

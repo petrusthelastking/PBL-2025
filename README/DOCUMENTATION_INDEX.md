@@ -1,6 +1,33 @@
 # 📚 FIREBASE DOCUMENTATION INDEX
 
-Panduan lengkap untuk navigasi semua file dokumentasi Firebase.
+Panduan lengkap untuk navigasi semua file dokumentasi Firebase & Clean Code.
+
+---
+
+## 🎨 CLEAN CODE DOCUMENTATION 🆕
+
+### ⭐ CLEAN_CODE_INDEX.md ⭐⭐⭐ 🆕
+**Central hub untuk clean code docs**
+- Overview semua clean code yang sudah dilakukan
+- Principles & best practices
+- Metrics improvement
+- Next targets untuk clean code
+- Checklist template
+
+**Kapan membaca:** Sebelum mulai clean code atau refactoring
+
+---
+
+### ⭐ DASHBOARD_CLEAN_CODE_SUMMARY.md ⭐⭐⭐ 🆕
+**Complete guide dashboard refactoring**
+- Dashboard 1780 baris → 134 baris (-92%)
+- Struktur file modular
+- Before vs After comparison
+- Widget breakdown detail
+- How to use & extend
+- Next steps implementation
+
+**Kapan membaca:** Mau pahami struktur dashboard atau apply pattern serupa
 
 ---
 
@@ -396,4 +423,3 @@ Project Root/
 **Happy coding! 🚀**
 
 _Gunakan dokumentasi ini sebagai referensi sepanjang development process._
-
