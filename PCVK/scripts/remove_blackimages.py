@@ -254,7 +254,7 @@ def show_dataset_stats(base_dir):
                 images = []
                 for ext in image_extensions:
                     images.extend(list(class_dir.glob(f'*{ext}')))
-                    images.extend(list(class_dir.glob(f'*{ext.upper()}')))
+                    # images.extend(list(class_dir.glob(f'*{ext.upper()}')))
                 
                 num_images = len(images)
                 total_images += num_images
