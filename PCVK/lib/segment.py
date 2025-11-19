@@ -69,13 +69,17 @@ def apply_automatic_brightness_contrast(img, clip_hist_percent=1):
 
     # Locate left cut
     minimum_gray = 0
-    while accumulator[minimum_gray] < clip_hist_percent:
+    while minimum_gray < hist_size - 1 and accumulator[minimum_gray] < clip_hist_percent:
         minimum_gray += 1
 
     # Locate right cut
     maximum_gray = hist_size - 1
-    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+    while maximum_gray > 0 and accumulator[maximum_gray] >= (maximum - clip_hist_percent):
         maximum_gray -= 1
+
+    if maximum_gray <= minimum_gray:
+        maximum_gray = hist_size - 1
+        minimum_gray = 0
 
     # Calculate alpha and beta values
     alpha = 255 / (maximum_gray - minimum_gray)
