@@ -26,6 +26,7 @@ dependencies:
   # State Management & Utils
   provider: ^6.1.2
   shared_preferences: ^2.3.3
+  flutter_launcher_icons: ^0.14.4
 
 dev_dependencies:
   flutter_test:
@@ -43,3 +44,21 @@ flutter:
     - family: Fendysa
       fonts:
         - asset: assets/fonts/Fendysa.ttf
+
+flutter_launcher_icons:
+  android: "icons"
+  ios: true
+  image_path: "assets/icons/icon.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/icons/icon.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/icons/icon.png"
