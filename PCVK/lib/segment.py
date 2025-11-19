@@ -1,10 +1,97 @@
-#@markdown ### Segment.py - Image Segmentation Functions
+# @markdown ### Segment.py - Image Segmentation Functions
 import cv2
 import numpy as np
 import torch
 from torchvision import transforms
 from PIL import Image
 import os
+
+from api.config import MODEL_PATHS
+
+
+def apply_clahe(img, clip_limit=2.0, tile_grid_size=(8, 8)):
+    """
+    Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    State-of-the-art adaptive contrast enhancement method
+
+    Args:
+        img: Input image (BGR)
+        clip_limit: Threshold for contrast limiting (higher = more contrast)
+        tile_grid_size: Size of grid for histogram equalization
+
+    Returns:
+        Enhanced image with improved contrast
+    """
+    # Convert to LAB color space for better color preservation
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+
+    # Apply CLAHE to L-channel only
+    clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=tile_grid_size)
+    cl = clahe.apply(l)
+
+    # Merge channels and convert back to BGR
+    enhanced_lab = cv2.merge((cl, a, b))
+    enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+    return enhanced
+
+
+def apply_automatic_brightness_contrast(img, clip_hist_percent=1):
+    """
+    Automatic brightness and contrast optimization
+
+    Args:
+        img: Input image (BGR)
+        clip_hist_percent: Percentage of histogram to clip
+
+    Returns:
+        Optimized image
+    """
+    # Convert to YUV color space
+    yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+
+    # Calculate grayscale histogram
+    gray = yuv[:, :, 0]
+    hist = cv2.calcHist([gray], [0], None, [256], [0, 256])
+    hist_size = len(hist)
+
+    # Calculate cumulative distribution
+    accumulator = []
+    accumulator.append(float(hist[0]))
+    for index in range(1, hist_size):
+        accumulator.append(accumulator[index - 1] + float(hist[index]))
+
+    # Locate points to clip
+    maximum = accumulator[-1]
+    clip_hist_percent *= maximum / 100.0
+    clip_hist_percent /= 2.0
+
+    # Locate left cut
+    minimum_gray = 0
+    while minimum_gray < hist_size - 1 and accumulator[minimum_gray] < clip_hist_percent:
+        minimum_gray += 1
+
+    # Locate right cut
+    maximum_gray = hist_size - 1
+    while maximum_gray > 0 and accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+        maximum_gray -= 1
+
+    if maximum_gray <= minimum_gray:
+        maximum_gray = hist_size - 1
+        minimum_gray = 0
+
+    # Calculate alpha and beta values
+    alpha = 255 / (maximum_gray - minimum_gray)
+    beta = -minimum_gray * alpha
+
+    # Apply brightness and contrast
+    yuv[:, :, 0] = cv2.convertScaleAbs(yuv[:, :, 0], alpha=alpha, beta=beta)
+
+    # Convert back to BGR
+    enhanced = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+
+    return enhanced
 
 
 def segment_grabcut(img, iterations=5):
@@ -122,111 +209,96 @@ def segment_hsv_color(img, lower_bound=(20, 40, 40), upper_bound=(180, 255, 255)
 
 def segment_u2netp(img, model_path=None):
     """
-    Segment image using U2Net-P (Portrait) model
+    Segment image using U2Net-P (Portrait) model from ONNX
 
     Args:
         img: Input image (BGR format from OpenCV)
-        model_path: Path to U2Net-P model weights (optional, will download if not provided)
+        model_path: Path to U2Net-P ONNX model (optional, defaults to models/u2netp.onnx)
 
     Returns:
         Segmented image with background removed
     """
     try:
-        # Import U2Net model
-        from torchvision.models import detection
+        import onnxruntime as ort
+        
+        # Lazy load ONNX model
+        global _u2netp_session
+        if "_u2netp_session" not in globals():
+            _u2netp_session = None
 
-        # Lazy load model
-        global _u2netp_model
-        if "_u2netp_model" not in globals():
-            _u2netp_model = None
-
-        if _u2netp_model is None:
-            # Load or download U2Net-P model
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-            # Try to import rembg (which includes U2Net models)
-
-            from rembg import remove, new_session
-            # Use rembg for easier implementation
-            img_pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            output = remove(img_pil, session=new_session("u2netp"))
-            # Convert back to OpenCV format
-            output_np = np.array(output)
-            # If output has alpha channel, apply it as mask
-            if output_np.shape[2] == 4:
-                # Extract RGB and alpha
-                rgb = output_np[:, :, :3]
-                alpha = output_np[:, :, 3]
-                # Apply alpha channel as mask
-                mask = alpha.astype(float) / 255.0
-                segmented = (rgb * mask[:, :, np.newaxis]).astype(np.uint8)
-                # Convert back to BGR
-                segmented = cv2.cvtColor(segmented, cv2.COLOR_RGB2BGR)
-            else:
-                segmented = cv2.cvtColor(output_np, cv2.COLOR_RGB2BGR)
-            return segmented
-
-
-
-        # Manual implementation (if rembg is not available)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if _u2netp_session is None:
+            # Set default model path
+            if model_path is None:
+                model_path = MODEL_PATHS["u2netp"]
+            
+            if not os.path.exists(model_path):
+                raise FileNotFoundError(f"U2Net-P ONNX model not found at {model_path}")
+            
+            # Load ONNX model
+            print(f"Loading U2Net-P ONNX model from {model_path}")
+            _u2netp_session = ort.InferenceSession(
+                model_path,
+                providers=['CUDAExecutionProvider', 'CPUExecutionProvider']
+            )
+            print(f"U2Net-P model loaded successfully")
 
         # Preprocess image
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_pil = Image.fromarray(img_rgb)
+        h_orig, w_orig = img.shape[:2]
+        
+        # Resize to model input size (320x320 for U2Net-P)
+        img_resized = cv2.resize(img_rgb, (320, 320))
+        
+        # Normalize to [0, 1] and convert to float32
+        img_normalized = img_resized.astype(np.float32) / 255.0
+        
+        # Normalize with ImageNet stats
+        mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+        std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+        img_normalized = (img_normalized - mean) / std
+        
+        # Convert to NCHW format (batch, channels, height, width)
+        img_input = np.transpose(img_normalized, (2, 0, 1))
+        img_input = np.expand_dims(img_input, axis=0)
 
-        # Define transforms
-        transform = transforms.Compose(
-            [
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                ),
-            ]
-        )
-
-        input_tensor = transform(img_pil).unsqueeze(0).to(device)
-
-        # Get prediction
-        with torch.no_grad():
-            output = _u2netp_model(input_tensor)
-
-            # U2Net returns multiple outputs, use the first one
-            if isinstance(output, tuple) or isinstance(output, list):
-                pred = output[0]
-            else:
-                pred = output
-
-            # Normalize prediction to [0, 1]
-            pred = torch.sigmoid(pred)
-            pred = pred.squeeze().cpu().numpy()
-
+        # Run inference
+        input_name = _u2netp_session.get_inputs()[0].name
+        output_name = _u2netp_session.get_outputs()[0].name
+        
+        pred = _u2netp_session.run([output_name], {input_name: img_input})[0]
+        
+        # Process output
+        # pred shape is (1, 1, H, W)
+        pred = pred.squeeze()  # Remove batch and channel dims
+        
+        # Normalize to [0, 1]
+        pred = (pred - pred.min()) / (pred.max() - pred.min() + 1e-8)
+        
         # Resize mask to original image size
-        h, w = img.shape[:2]
-        mask = cv2.resize(pred, (w, h))
-
+        mask = cv2.resize(pred, (w_orig, h_orig))
+        
         # Threshold mask
         mask = (mask > 0.5).astype(np.uint8) * 255
-
+        
         # Apply morphological operations to refine mask
         kernel = np.ones((3, 3), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-
+        
         # Apply mask to original image
         segmented = cv2.bitwise_and(img, img, mask=mask)
-
+        
         return segmented
 
     except Exception as e:
         print(f"U2Net-P segmentation failed: {e}")
+        import traceback
+        traceback.print_exc()
         print("Falling back to HSV segmentation...")
         return segment_hsv_color(img)
 
 
-
-def auto_segment(img, method="grabcut"):
+def auto_segment(img, method="grabcut", applyBrightContClahe=True):
     """
     Automatic segmentation with multiple method options
 
@@ -237,14 +309,19 @@ def auto_segment(img, method="grabcut"):
     Returns:
         Segmented image
     """
-    if method == "grabcut":
-        return segment_grabcut(img)
-    elif method == "adaptive":
-        return segment_adaptive_threshold(img)
-    elif method == "hsv":
-        return segment_hsv_color(img)
-    elif method == "u2netp":
-        return segment_u2netp(img)
-    else:
-        return img
+    img = cv2.resize(img, (224, 224))
 
+    if method == "grabcut":
+        result = segment_grabcut(img)
+    elif method == "adaptive":
+        result = segment_adaptive_threshold(img)
+    elif method == "hsv":
+        result = segment_hsv_color(img)
+    elif method == "u2netp":
+        result = segment_u2netp(img)
+    else:
+        result = img
+
+    if applyBrightContClahe:
+        return apply_clahe(apply_automatic_brightness_contrast(result))
+    return result

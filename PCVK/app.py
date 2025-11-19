@@ -14,10 +14,6 @@ if __name__ == "__main__":
     
     print("Starting FastAPI server")
     print(f"Device: {app.extra.get('device', 'N/A')}" if hasattr(app, 'extra') else "")
-    print(f"Available model types: {list(MODEL_PATHS.keys())}")
-    
-    for model_type, path in MODEL_PATHS.items():
-        print(f"  {model_type}: {path}")
     
     uvicorn.run(
         app,

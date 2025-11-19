@@ -27,6 +27,7 @@ def gradio_predict(
     hsv_v_upper,
     grabcut_iterations,
     adaptive_kernel_size,
+    apply_brightness_contrast,
 ):
     """
     Wrapper function for Gradio interface
@@ -52,7 +53,7 @@ def gradio_predict(
             if seg_method == "hsv":
                 import sys
                 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-                from lib.segment import segment_hsv_color
+                from lib.segment import segment_hsv_color, apply_clahe, apply_automatic_brightness_contrast
                 segmented_img = segment_hsv_color(
                     image_bgr.copy(),
                     lower_bound=(
@@ -66,27 +67,33 @@ def gradio_predict(
                         else (180, 255, 255)
                     ),
                 )
+                if apply_brightness_contrast:
+                    segmented_img = apply_clahe(apply_automatic_brightness_contrast(segmented_img))
             elif seg_method == "grabcut":
                 import sys
                 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-                from lib.segment import segment_grabcut
+                from lib.segment import segment_grabcut, apply_clahe, apply_automatic_brightness_contrast
                 segmented_img = segment_grabcut(
                     image_bgr.copy(),
                     iterations=grabcut_iterations if use_custom_params else 5,
                 )
+                if apply_brightness_contrast:
+                    segmented_img = apply_clahe(apply_automatic_brightness_contrast(segmented_img))
             elif seg_method == "adaptive":
                 import sys
                 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-                from lib.segment import segment_adaptive_threshold
+                from lib.segment import segment_adaptive_threshold, apply_clahe, apply_automatic_brightness_contrast
                 segmented_img = segment_adaptive_threshold(
                     image_bgr.copy(),
                     kernel_size=adaptive_kernel_size if use_custom_params else 5,
                 )
+                if apply_brightness_contrast:
+                    segmented_img = apply_clahe(apply_automatic_brightness_contrast(segmented_img))
             else:
                 import sys
                 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
                 from lib.segment import auto_segment
-                segmented_img = auto_segment(image_bgr.copy(), method=seg_method)
+                segmented_img = auto_segment(image_bgr.copy(), method=seg_method, applyBrightContClahe=apply_brightness_contrast)
         else:
             segmented_img = image_bgr.copy()
 
@@ -143,10 +150,10 @@ def create_gradio_interface():
                 with gr.Accordion("Pengaturan Model dan Segmentasi", open=True):
                     # Model selection
                     model_type = gr.Radio(
-                        choices=["mlp", "mlpv2"],
-                        value="mlpv2",
+                        choices=["mlp", "mlpv2", "mlpv2_auto-clahe"],
+                        value="mlpv2_auto-clahe",
                         label="Pilih Model",
-                        info="MLP: Simple model, MLPv2: Advanced with residual connections"
+                        info="MLP: Simple model, MLPv2: Advanced with residual connections, MLPv2 Auto-CLAHE: MLPv2 trained with automatic brightness/contrast enhancement"
                     )
                     
                     use_seg = gr.Checkbox(
@@ -159,6 +166,13 @@ def create_gradio_interface():
                         value="u2netp",
                         label="Metode Segmentasi",
                         info="HSV: berdasarkan warna, GrabCut: berbasis grafik, Adaptive: threshold adaptif, U2Net-P: deep learning",
+                    )
+                    
+                    # Brightness & Contrast Enhancement
+                    apply_brightness_contrast = gr.Checkbox(
+                        value=True,
+                        label="Gunakan Brightness & Contrast Enhancement (CLAHE)",
+                        info="Menerapkan peningkatan kecerahan dan kontras adaptif",
                     )
 
                     use_custom_params = gr.Checkbox(
@@ -294,7 +308,7 @@ def create_gradio_interface():
                             grabcut_iterations,
                             adaptive_kernel_size,
                         ],
-                    )
+                    )                   
 
                 
 
@@ -320,6 +334,7 @@ def create_gradio_interface():
                 hsv_v_upper,
                 grabcut_iterations,
                 adaptive_kernel_size,
+                apply_brightness_contrast,
             ],
             outputs=[result_text, confidence_plot, segmented_output],
         )

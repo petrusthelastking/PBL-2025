@@ -43,13 +43,14 @@ def preprocess_image(image: Image.Image, target_size: Tuple[int, int] = (224, 22
     return image_bgr
 
 
-def apply_segmentation(image: np.ndarray, method: str = "hsv") -> np.ndarray:
+def apply_segmentation(image: np.ndarray, method: str = "hsv", apply_brightness_contrast: bool = True) -> np.ndarray:
     """
     Apply segmentation to image
     
     Args:
         image: Input image (BGR)
         method: Segmentation method
+        apply_brightness_contrast: Whether to apply brightness and contrast enhancement
     
     Returns:
         Segmented image
@@ -57,7 +58,7 @@ def apply_segmentation(image: np.ndarray, method: str = "hsv") -> np.ndarray:
     if method == "none":
         return image.copy()
     
-    return auto_segment(image.copy(), method=method)
+    return auto_segment(image.copy(), method=method, applyBrightContClahe=apply_brightness_contrast)
 
 
 def extract_features_from_image(image: np.ndarray) -> np.ndarray:
@@ -119,7 +120,8 @@ def predict_image(
     model: torch.nn.Module,
     image: Image.Image,
     use_segmentation: bool = True,
-    seg_method: str = "hsv"
+    seg_method: str = "hsv",
+    apply_brightness_contrast: bool = True
 ) -> Tuple[str, float, Dict[str, float]]:
     """
     Complete prediction pipeline
@@ -129,6 +131,7 @@ def predict_image(
         image: PIL Image
         use_segmentation: Whether to apply segmentation
         seg_method: Segmentation method
+        apply_brightness_contrast: Whether to apply brightness and contrast enhancement
     
     Returns:
         Tuple of (predicted_class, confidence, all_confidences)
@@ -138,7 +141,7 @@ def predict_image(
     
     # Apply segmentation if enabled
     if use_segmentation and seg_method != "none":
-        segmented_img = apply_segmentation(image_bgr, method=seg_method)
+        segmented_img = apply_segmentation(image_bgr, method=seg_method, apply_brightness_contrast=apply_brightness_contrast)
     else:
         segmented_img = image_bgr
     

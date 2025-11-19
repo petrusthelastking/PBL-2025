@@ -56,6 +56,14 @@ class ModelManager:
                     dropout_rate=0.3,
                     use_residual=True
                 )
+            elif model_type == "mlpv2_auto-clahe":
+                model = ModelMLPV2(
+                    num_features=NUM_FEATURES,
+                    num_classes=len(CLASS_NAMES),
+                    hidden_dims=[256, 512, 256, 128],
+                    dropout_rate=0.3,
+                    use_residual=True
+                )
             else:
                 raise ValueError(f"Unknown model type: {model_type}")
             
@@ -87,11 +95,10 @@ class ModelManager:
         Returns:
             True if at least one model loaded successfully
         """
-        success_count = 0
-        for model_type in MODEL_PATHS.keys():
-            if self.load_model(model_type):
-                success_count += 1
-        return success_count > 0
+        self.load_model("mlp")
+        self.load_model("mlpv2")
+        self.load_model("mlpv2_auto-clahe")
+        return True
     
     def get_model(self, model_type: str) -> Optional[torch.nn.Module]:
         """
