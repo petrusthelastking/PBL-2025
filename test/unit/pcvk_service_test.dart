@@ -13,7 +13,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'pcvk_service_test.mocks.dart';
-import 'fixtures/pcvk_mock_responses.dart';
+import '../fixtures/pcvk_mock_responses.dart';
 
 @GenerateMocks([http.Client])
 void main() {

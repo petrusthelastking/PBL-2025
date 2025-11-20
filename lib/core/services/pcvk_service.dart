@@ -9,7 +9,7 @@ import 'package:jawara/core/models/PCVK/predict_response.dart';
 
 class PcvkService {
   final String _apiUrl =
-      'https://pcvk-containerapp.lemonisland-43c085da.southeastasia.azurecontainerapps.io/';
+      'https://pcvk-containerapp.lemonisland-43c085da.southeastasia.azurecontainerapps.io/api/';
   late final http.Client _client;
 
   PcvkService({http.Client? httpClient}) {
@@ -45,10 +45,28 @@ class PcvkService {
     }
   }
 
-  Future<PredictModelResponse> predict(File picture) async {
-    final request = http.MultipartRequest('POST', _buildEndpoint('predict'));
+  Future<PredictModelResponse> predict(
+    File picture, {
+    bool useSegmentation = true,
+    String segMethod = 'u2netp',
+    String modelType = 'mlpv2_auto-clahe',
+    bool applyBrightnessContrast = true,
+  }) async {
+    final uri = _buildEndpoint('predict').replace(
+      queryParameters: {
+        'use_segmentation': useSegmentation.toString(),
+        'seg_method': segMethod,
+        'model_type': modelType,
+        'apply_brightness_contrast': applyBrightnessContrast.toString(),
+      },
+    );
+    final request = http.MultipartRequest('POST', uri);
     request.files.add(
-      await http.MultipartFile.fromPath('picture', picture.path),
+      await http.MultipartFile.fromPath(
+        'file',
+        picture.path,
+        contentType: http.MediaType('image', ''),
+      ),
     );
     final response = await _client.send(request);
     if (response.statusCode == 200) {
@@ -59,14 +77,29 @@ class PcvkService {
     }
   }
 
-  Future<BatchPredictionResponse> batchPredict(List<File> pictures) async {
-    final request = http.MultipartRequest(
-      'POST',
-      _buildEndpoint('batch-predict'),
+  Future<BatchPredictionResponse> batchPredict(
+    List<File> pictures, {
+    bool useSegmentation = true,
+    String segMethod = 'u2netp',
+    String modelType = 'mlpv2_auto-clahe',
+    bool applyBrightnessContrast = true,
+  }) async {
+    final uri = _buildEndpoint('batch-predict').replace(
+      queryParameters: {
+        'use_segmentation': useSegmentation.toString(),
+        'seg_method': segMethod,
+        'model_type': modelType,
+        'apply_brightness_contrast': applyBrightnessContrast.toString(),
+      },
     );
+    final request = http.MultipartRequest('POST', uri);
     for (var picture in pictures) {
       request.files.add(
-        await http.MultipartFile.fromPath('picture', picture.path),
+        await http.MultipartFile.fromPath(
+          'files',
+          picture.path,
+          contentType: http.MediaType('image', ''),
+        ),
       );
     }
     final response = await _client.send(request);
