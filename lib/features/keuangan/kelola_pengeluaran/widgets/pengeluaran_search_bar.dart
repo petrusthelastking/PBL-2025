@@ -46,7 +46,7 @@ class PengeluaranSearchBar extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            'Daftar Transaksi',
+            'Daftar Laporan',
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w700,

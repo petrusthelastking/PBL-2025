@@ -202,6 +202,20 @@ service cloud.firestore {
       allow update, delete: if true;
     }
 
+    // ========================================================================
+    // PENGELUARAN COLLECTION - Full CRUD access
+    // ========================================================================
+    match /pengeluaran/{pengeluaranId} {
+      allow read: if true;
+      allow create: if hasValidData() &&
+                       'name' in request.resource.data &&
+                       'category' in request.resource.data &&
+                       'nominal' in request.resource.data &&
+                       request.resource.data.nominal is number &&
+                       request.resource.data.nominal > 0;
+      allow update, delete: if true;
+    }
+
     match /mutasi_warga/{mutasiId} {
       allow read: if true;
       allow create: if hasValidData() && 'type' in request.resource.data;

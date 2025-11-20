@@ -1,6 +1,20 @@
 {
   "indexes": [
     {
+      "collectionGroup": "pengeluaran",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tanggal",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "pemasukan_lain",
       "queryScope": "COLLECTION",
       "fields": [
@@ -11,6 +25,20 @@
         {
           "fieldPath": "tanggal",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pemasukan_lain",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tanggal",
+          "order": "ASCENDING"
         }
       ]
     },

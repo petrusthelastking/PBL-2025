@@ -1,0 +1,77 @@
+# CARA FIX FIREBASE ERRORS - PENGELUARAN COLLECTION
+
+## Problems Fixed
+1. ✅ Error: `permission-denied` - Rules updated
+2. ✅ Error: `failed-precondition` - Index required
+3. ✅ Error: `RenderFlex overflow` - Layout fixed
+
+## Solution
+
+### Step 1: Deploy Firestore Rules (REQUIRED)
+
+**Option A - Via Terminal (Recommended):**
+```bash
+cd "C:\Peyimpanan Pribadi\Data D\New folder (2)\Semester 5\PBL 2025"
+firebase deploy --only firestore:rules
+```
+
+**Option B - Via Firebase Console:**
+1. Buka: https://console.firebase.google.com
+2. Pilih project: **pbl-2025-35a1c**
+3. **Firestore Database** → **Rules**
+4. Tambahkan rules berikut SEBELUM baris terakhir `}`:
+
+```javascript
+// PENGELUARAN COLLECTION - Full CRUD access
+match /pengeluaran/{pengeluaranId} {
+  allow read: if true;
+  allow create: if hasValidData() &&
+                   'name' in request.resource.data &&
+                   'category' in request.resource.data &&
+                   'nominal' in request.resource.data &&
+                   request.resource.data.nominal is number &&
+                   request.resource.data.nominal > 0;
+  allow update, delete: if true;
+}
+```
+5. Klik **Publish**
+
+### Step 2: Create Firestore Index (REQUIRED)
+
+**Option A - Via Terminal (Recommended):**
+```bash
+firebase deploy --only firestore:indexes
+```
+
+**Option B - Via Link (Automatic):**
+Click this link to auto-create index:
+https://console.firebase.google.com/v1/r/project/pbl-2025-35a1c/firestore/indexes?create_composite=ClJwcm9qZWN0cy9wYmwtMjAyNS0zNWExYy9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcGVuZ2VsdWFyYW4vaW5kZXhlcy9fEAEaDAoIaXNBY3RpdmUQARoLCgd0YW5nZ2FsEAIaDAoIX19uYW1lX18QAg
+
+**Option C - Via Firebase Console (Manual):**
+1. Buka: https://console.firebase.google.com
+2. Pilih project: **pbl-2025-35a1c**
+3. **Firestore Database** → **Indexes** tab
+4. Klik **Create Index**
+5. Setup index:
+   - Collection: `pengeluaran`
+   - Field 1: `isActive` (Ascending)
+   - Field 2: `tanggal` (Descending)
+6. Klik **Create**
+7. Wait 2-5 minutes for index to build
+
+### Step 3: Verify
+
+Setelah deploy, restart Flutter app:
+```bash
+flutter run
+```
+
+Errors seharusnya sudah hilang!
+
+## Notes
+
+- Rules sudah ditambahkan di file `firestore.rules` lokal
+- Anda hanya perlu deploy ke Firebase
+- Error handling sudah ditambahkan di code untuk menangani permission errors
+- Jika masih error, gunakan Option 2 (manual via console)
+
