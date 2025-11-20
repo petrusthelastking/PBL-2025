@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/widgets/app_bottom_navigation.dart';
+import '../../core/widgets/export_dialog.dart';
+import '../../core/services/keuangan_summary_service.dart';
 import '../dashboard/dashboard_page.dart';
 import '../data_warga/data_penduduk/data_penduduk_page.dart';
 import '../agenda/kegiatan/kegiatan_page.dart';
@@ -127,6 +129,22 @@ class _KeuanganPageState extends State<KeuanganPage> {
     },
   ];
 
+  // Dynamic data from Firebase
+  final KeuanganSummaryService _keuanganService = KeuanganSummaryService();
+  bool _isLoadingKeuangan = true;
+  double _totalPemasukan = 0;
+  double _totalPengeluaran = 0;
+  double _totalAsset = 0;
+  int _pemasukanPercentage = 0;
+  int _pengeluaranPercentage = 0;
+  double _growthPercentage = 0;
+
+  final currencyFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
+
   List<Map<String, dynamic>> get _filteredReports {
     // Pilih data berdasarkan tombol yang aktif
     final sourceData = _showPengeluaran ? _mockPengeluaran : _mockPemasukan;
@@ -138,6 +156,40 @@ class _KeuanganPageState extends State<KeuanganPage> {
           report['kategori'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
       return matchesSearch;
     }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadKeuanganData();
+  }
+
+  Future<void> _loadKeuanganData() async {
+    setState(() {
+      _isLoadingKeuangan = true;
+    });
+
+    try {
+      final summary = await _keuanganService.getKeuanganSummary();
+
+      if (mounted) {
+        setState(() {
+          _totalPemasukan = summary['totalPemasukan'] ?? 0;
+          _totalPengeluaran = summary['totalPengeluaran'] ?? 0;
+          _totalAsset = summary['totalAsset'] ?? 0;
+          _pemasukanPercentage = summary['pemasukanPercentage'] ?? 0;
+          _pengeluaranPercentage = summary['pengeluaranPercentage'] ?? 0;
+          _growthPercentage = summary['growthPercentage'] ?? 0;
+          _isLoadingKeuangan = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingKeuangan = false;
+        });
+      }
+    }
   }
 
   @override
@@ -535,8 +587,8 @@ class _KeuanganPageState extends State<KeuanganPage> {
         Expanded(
           child: _buildKPICard(
             title: 'Total Pengeluaran',
-            amount: 'Rp10.000.000',
-            percentage: 50,
+            amount: _isLoadingKeuangan ? 'Memuat...' : currencyFormat.format(_totalPengeluaran),
+            percentage: _pengeluaranPercentage,
             color: const Color(0xFFEF4444),
           ),
         ),
@@ -544,8 +596,8 @@ class _KeuanganPageState extends State<KeuanganPage> {
         Expanded(
           child: _buildKPICard(
             title: 'Total Pemasukan',
-            amount: 'Rp.20.000.000',
-            percentage: 60,
+            amount: _isLoadingKeuangan ? 'Memuat...' : currencyFormat.format(_totalPemasukan),
+            percentage: _pemasukanPercentage,
             color: const Color(0xFF10B981),
           ),
         ),

@@ -111,7 +111,7 @@ class PengeluaranHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kelola Pengeluaran',
+                'Laporan Pengeluaran',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -121,11 +121,11 @@ class PengeluaranHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Pantau dan kelola dengan mudah',
+                'Daftar laporan dari RT/RW',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withOpacity(0.8),
                 ),
               ),
             ],

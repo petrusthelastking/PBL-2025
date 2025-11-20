@@ -13,6 +13,7 @@ import 'core/providers/keluarga_provider.dart';
 import 'core/providers/jenis_iuran_provider.dart';
 import 'core/providers/agenda_provider.dart';
 import 'core/providers/pemasukan_lain_provider.dart';
+import 'core/providers/pengeluaran_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => JenisIuranProvider()),
         ChangeNotifierProvider(create: (_) => AgendaProvider()),
         ChangeNotifierProvider(create: (_) => PemasukanLainProvider()),
+        ChangeNotifierProvider(create: (_) => PengeluaranProvider()),
       ],
       child: const JawaraApp(),
     ),

@@ -24,21 +24,21 @@ class PengeluaranEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            'Tidak ada pengeluaran',
+            'Belum Ada Laporan',
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1F2937),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
-            'Coba cari dengan kata kunci lain\natau ubah filter tanggal',
+            'Belum ada laporan pengeluaran dari RT/RW.\nLaporan akan muncul di sini setelah ditambahkan.',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: const Color(0xFF9CA3AF),
-              height: 1.5,
+              color: const Color(0xFF6B7280),
+              height: 1.6,
             ),
           ),
         ],
