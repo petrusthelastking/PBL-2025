@@ -148,6 +148,10 @@ class PengeluaranProvider with ChangeNotifier {
 
       await _service.createPengeluaran(pengeluaran);
 
+      // Reload total after creating to ensure UI is updated
+      await loadTotalTerverifikasi();
+      await loadSummary();
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -168,6 +172,10 @@ class PengeluaranProvider with ChangeNotifier {
       notifyListeners();
 
       await _service.updatePengeluaran(id, data);
+
+      // Reload total after updating to ensure UI is updated
+      await loadTotalTerverifikasi();
+      await loadSummary();
 
       _isLoading = false;
       notifyListeners();
@@ -190,6 +198,10 @@ class PengeluaranProvider with ChangeNotifier {
 
       await _service.verifikasiPengeluaran(id, approved);
 
+      // Reload total after verifying to ensure UI is updated (this is important!)
+      await loadTotalTerverifikasi();
+      await loadSummary();
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -210,6 +222,10 @@ class PengeluaranProvider with ChangeNotifier {
       notifyListeners();
 
       await _service.deletePengeluaran(id);
+
+      // Reload total after deleting to ensure UI is updated
+      await loadTotalTerverifikasi();
+      await loadSummary();
 
       _isLoading = false;
       notifyListeners();
@@ -260,10 +276,10 @@ class PengeluaranProvider with ChangeNotifier {
   }
 
   /// Refresh data
-  void refresh() {
+  Future<void> refresh() async {
     loadPengeluaran(status: _selectedStatus);
-    loadTotalTerverifikasi();
-    loadSummary();
+    await loadTotalTerverifikasi();
+    await loadSummary();
   }
 }
 

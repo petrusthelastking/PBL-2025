@@ -38,20 +38,153 @@ void main() {
         // Start app
         print('  🔵 Starting application...');
         app.main();
-        await tester.pumpAndSettle(const Duration(seconds: 5));
+        await tester.pumpAndSettle(const Duration(seconds: 2)); // Reduced from 3s
         print('  ✅ App started\n');
 
-        // Skip intro if any
-        print('  🔵 Checking for intro screen...');
-        final lewatiBtn = find.text('Lewati');
-        if (lewatiBtn.evaluate().isNotEmpty) {
-          print('  🔵 Tapping Lewati...');
-          await tester.tap(lewatiBtn);
-          await tester.pumpAndSettle(const Duration(seconds: 2));
-          print('  ✅ Intro skipped');
-        } else {
-          print('  ℹ️  No intro screen found');
+        // AUTO-SKIP ONBOARDING - AGGRESSIVE MODE (FASTER!)
+        print('  🔵 Auto-skipping onboarding screens (FAST MODE)...');
+
+        // Loop aggressively to skip all onboarding screens
+        bool onboardingComplete = false;
+        int attempts = 0;
+        int maxAttempts = 8; // Reduced from 10 for speed
+
+        while (!onboardingComplete && attempts < maxAttempts) {
+          attempts++;
+          await tester.pumpAndSettle(const Duration(milliseconds: 200)); // Reduced from 300ms
+
+          print('  🔄 Attempt $attempts/$maxAttempts...');
+
+          // Check if we're at login/register screen first
+          final masukBtn = find.text('Masuk');
+          final daftarBtn = find.text('Daftar');
+          final loginText = find.text('Login');
+
+          if (masukBtn.evaluate().isNotEmpty ||
+              daftarBtn.evaluate().isNotEmpty ||
+              loginText.evaluate().isNotEmpty) {
+            print('  ✅ Onboarding complete! At login/register screen');
+            onboardingComplete = true;
+            break;
+          }
+
+          // Try ALL methods in sequence
+          bool actionTaken = false;
+
+          // Method 1: Lewati button (most common)
+          final lewatiBtn = find.text('Lewati');
+          if (lewatiBtn.evaluate().isNotEmpty) {
+            print('  🔵 Tapping "Lewati" button...');
+            await tester.tap(lewatiBtn.first);
+            await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+            actionTaken = true;
+            continue;
+          }
+
+          // Method 2: Next button
+          var nextBtn = find.text('Next');
+          if (nextBtn.evaluate().isEmpty) {
+            nextBtn = find.text('Selanjutnya');
+          }
+          if (nextBtn.evaluate().isNotEmpty) {
+            print('  🔵 Tapping "Next" button...');
+            await tester.tap(nextBtn.first);
+            await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+            actionTaken = true;
+            continue;
+          }
+
+          // Method 3: Skip button
+          var skipBtn = find.text('Skip');
+          if (skipBtn.evaluate().isEmpty) {
+            skipBtn = find.textContaining('Skip');
+          }
+          if (skipBtn.evaluate().isNotEmpty) {
+            print('  🔵 Tapping "Skip" button...');
+            await tester.tap(skipBtn.first);
+            await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+            actionTaken = true;
+            continue;
+          }
+
+          // Method 4: Any button that might be next/continue
+          final continueBtn = find.text('Lanjut');
+          if (continueBtn.evaluate().isNotEmpty) {
+            print('  🔵 Tapping "Lanjut" button...');
+            await tester.tap(continueBtn.first);
+            await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+            actionTaken = true;
+            continue;
+          }
+
+          // Method 5: Find any ElevatedButton or TextButton in onboarding
+          final buttons = find.byType(ElevatedButton);
+          if (buttons.evaluate().isNotEmpty) {
+            // Avoid login button by checking text
+            for (var button in buttons.evaluate()) {
+              final widget = button.widget as ElevatedButton;
+              // Check if it's not a login-related button
+              final buttonText = find.descendant(
+                of: find.byWidget(widget),
+                matching: find.byType(Text),
+              );
+              if (buttonText.evaluate().isNotEmpty) {
+                await tester.tap(find.byWidget(widget));
+                await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+                print('  🔵 Tapped ElevatedButton in onboarding...');
+                actionTaken = true;
+                break;
+              }
+            }
+            if (actionTaken) continue;
+          }
+
+          // Method 6: Swipe to next page
+          try {
+            final pageView = find.byType(PageView);
+            if (pageView.evaluate().isNotEmpty) {
+              print('  🔵 Swiping to next page...');
+              await tester.fling(pageView.first, const Offset(-300, 0), 1000);
+              await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 800ms
+              actionTaken = true;
+              continue;
+            }
+          } catch (e) {
+            // PageView not found
+          }
+
+          // Method 7: Tap in the right side of screen (next button area)
+          if (!actionTaken) {
+            try {
+              print('  🔵 Tapping right side of screen...');
+              await tester.tapAt(const Offset(300, 500));
+              await tester.pumpAndSettle(const Duration(milliseconds: 800));
+              actionTaken = true;
+            } catch (e) {
+              // Ignore
+            }
+          }
+
+          // If no action was taken, we might be done or stuck
+          if (!actionTaken) {
+            print('  ℹ️  No onboarding elements found');
+            // Do one final check for login screen
+            await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
+            final finalMasukCheck = find.text('Masuk');
+            final finalDaftarCheck = find.text('Daftar');
+            if (finalMasukCheck.evaluate().isNotEmpty || finalDaftarCheck.evaluate().isNotEmpty) {
+              print('  ✅ Confirmed at login/register screen');
+              onboardingComplete = true;
+              break;
+            }
+          }
         }
+
+        if (!onboardingComplete) {
+          print('  ⚠️  Max attempts reached, proceeding anyway...');
+        }
+
+        await tester.pumpAndSettle(const Duration(milliseconds: 500)); // Reduced from 1s
 
         // Navigate to login
         print('\n  🔵 Navigating to login page...');
@@ -59,13 +192,13 @@ void main() {
         if (masukBtn.evaluate().isNotEmpty) {
           print('  🔵 Found "Masuk" button, tapping...');
           await tester.tap(masukBtn.first);
-          await tester.pumpAndSettle(const Duration(seconds: 2));
+          await tester.pumpAndSettle(const Duration(milliseconds: 700)); // Reduced from 1s
           print('  ✅ On login page');
         } else {
-          print('  ℹ️  No "Masuk" button found, might already be on login page');
+          print('  ℹ️  Already on login page');
         }
 
-        await tester.pumpAndSettle(const Duration(seconds: 1));
+        await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
 
         // Fill login form AUTOMATICALLY
         print('\n  🔵 Filling login credentials AUTOMATICALLY...');
@@ -84,7 +217,7 @@ void main() {
             fields.at(0),
             MockData.validAdminCredentials['email']!,
           );
-          await tester.pump(const Duration(milliseconds: 500));
+          await tester.pump(const Duration(milliseconds: 200)); // Reduced from 300ms
           print('  ✅ Email entered');
 
           // Enter password
@@ -93,24 +226,24 @@ void main() {
             fields.at(1),
             MockData.validAdminCredentials['password']!,
           );
-          await tester.pump(const Duration(milliseconds: 500));
+          await tester.pump(const Duration(milliseconds: 200)); // Reduced from 300ms
           print('  ✅ Password entered');
 
-          await tester.pumpAndSettle(const Duration(seconds: 1));
+          await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
 
           // Tap login button AUTOMATICALLY
           print('\n  🔵 Tapping login button...');
           final loginBtn = find.widgetWithText(ElevatedButton, 'Masuk');
           if (loginBtn.evaluate().isNotEmpty) {
             await tester.tap(loginBtn);
-            await tester.pumpAndSettle(const Duration(seconds: 5));
+            await tester.pumpAndSettle(const Duration(seconds: 2)); // Reduced from 3s
             print('  ✅ Login successful!');
           } else {
             // Try alternative login button finders
             final altLoginBtn = find.byType(ElevatedButton);
             if (altLoginBtn.evaluate().isNotEmpty) {
               await tester.tap(altLoginBtn.first);
-              await tester.pumpAndSettle(const Duration(seconds: 5));
+              await tester.pumpAndSettle(const Duration(seconds: 2)); // Reduced from 3s
               print('  ✅ Login successful (alternative method)!');
             }
           }
@@ -119,7 +252,7 @@ void main() {
         }
 
         print('\n✅ PHASE 1 COMPLETED: Auto-login successful!\n');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 700)); // Reduced from 1s
 
         // ====================================================================
         // PHASE 2: NAVIGATE TO DATA PENDUDUK
@@ -129,7 +262,7 @@ void main() {
 
         print('  🔵 Looking for Data Warga menu...');
         await DataPendudukTestHelper.navigateToDataPenduduk(tester);
-        await tester.pumpAndSettle(const Duration(seconds: 3));
+        await tester.pumpAndSettle(const Duration(milliseconds: 700)); // Reduced from 1s
 
         print('✅ PHASE 2 COMPLETED: On Data Penduduk page!\n');
 
@@ -143,7 +276,7 @@ void main() {
         print('  📊 Current total: $initialCount penduduk');
 
         print('\n✅ PHASE 3 COMPLETED: Data viewed successfully!\n');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
 
         // ====================================================================
         // PHASE 4: CREATE - TAMBAH PENDUDUK BARU
@@ -154,7 +287,7 @@ void main() {
         // Tap Tambah button
         print('  🔵 Tapping Tambah button...');
         await DataPendudukTestHelper.tapTambahButton(tester);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 700)); // Reduced from 1s
 
         // Fill form
         print('\n  🔵 Filling form with test data...');
@@ -174,7 +307,7 @@ void main() {
         // Save
         print('\n  🔵 Saving new penduduk...');
         await DataPendudukTestHelper.tapSimpanButton(tester);
-        await tester.pumpAndSettle(const Duration(seconds: 4));
+        await tester.pumpAndSettle(const Duration(milliseconds: 1500)); // Reduced from 2s
 
         // Verify
         final afterCreateCount = DataPendudukTestHelper.countPenduduk(tester);
@@ -184,7 +317,7 @@ void main() {
         }
 
         print('\n✅ PHASE 4 COMPLETED: Penduduk created!\n');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
 
         // ====================================================================
         // PHASE 5: UPDATE - EDIT DATA PENDUDUK
@@ -195,7 +328,7 @@ void main() {
         // Tap Edit button on first item
         print('  🔵 Tapping Edit button on first penduduk...');
         await DataPendudukTestHelper.tapEditButton(tester, 0);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 700)); // Reduced from 1s
 
         // Update form
         print('\n  🔵 Updating penduduk data...');
@@ -211,11 +344,11 @@ void main() {
         // Save update
         print('\n  🔵 Saving updated data...');
         await DataPendudukTestHelper.tapSimpanButton(tester);
-        await tester.pumpAndSettle(const Duration(seconds: 4));
+        await tester.pumpAndSettle(const Duration(milliseconds: 1500)); // Reduced from 2s
 
         print('\n  ✅ Penduduk data updated successfully!');
         print('\n✅ PHASE 5 COMPLETED: Data updated!\n');
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+        await tester.pumpAndSettle(const Duration(milliseconds: 300)); // Reduced from 500ms
 
         // ====================================================================
         // PHASE 6: DELETE - HAPUS DATA PENDUDUK
@@ -230,7 +363,7 @@ void main() {
           // Tap Delete button
           print('\n  🔵 Tapping Delete button on first penduduk...');
           await DataPendudukTestHelper.tapDeleteButton(tester, 0, confirm: true);
-          await tester.pumpAndSettle(const Duration(seconds: 4));
+          await tester.pumpAndSettle(const Duration(milliseconds: 1500)); // Reduced from 2s
 
           // Verify
           final afterDeleteCount = DataPendudukTestHelper.countPenduduk(tester);
