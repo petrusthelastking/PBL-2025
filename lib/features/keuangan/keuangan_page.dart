@@ -10,8 +10,8 @@ import '../../core/services/keuangan_summary_service.dart';
 import '../../core/providers/jenis_iuran_provider.dart';
 import '../../core/providers/pemasukan_lain_provider.dart';
 import '../../core/providers/pengeluaran_provider.dart';
-import '../dashboard/dashboard_page.dart';
-import '../data_warga/data_penduduk/data_penduduk_page.dart';
+import '../../core/providers/laporan_keuangan_detail_provider.dart';
+import '../../core/models/laporan_keuangan_detail_model.dart';
 import '../agenda/kegiatan/kegiatan_page.dart';
 import 'kelola_pemasukan/kelola_pemasukan_page.dart';
 import 'kelola_pengeluaran/kelola_pengeluaran_page.dart';
@@ -187,6 +187,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
         final jenisIuranProvider = context.read<JenisIuranProvider>();
         final pemasukanLainProvider = context.read<PemasukanLainProvider>();
         final pengeluaranProvider = context.read<PengeluaranProvider>();
+        final laporanDetailProvider = context.read<LaporanKeuanganDetailProvider>();
 
         // Add listeners to reload data when providers notify
         jenisIuranProvider.addListener(_onProviderDataChanged);
@@ -197,6 +198,9 @@ class _KeuanganPageState extends State<KeuanganPage> {
         jenisIuranProvider.fetchAllJenisIuran();
         pemasukanLainProvider.loadPemasukanLain();
         pengeluaranProvider.loadPengeluaran();
+
+        // Load laporan keuangan detail (transaksi terbaru)
+        laporanDetailProvider.loadAllTransaksi(limit: 10);
       }
     });
 
@@ -301,8 +305,6 @@ class _KeuanganPageState extends State<KeuanganPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildKelolaButtons(),
-                                const SizedBox(height: 20),
-                                _buildTotalPills(),
                                 const SizedBox(height: 20),
                                 _buildLaporanSection(),
                                 const SizedBox(height: 20),
@@ -1322,18 +1324,78 @@ class _KeuanganPageState extends State<KeuanganPage> {
   }
 
   Widget _buildReportsList() {
-    final reports = _filteredReports;
+    return Consumer<LaporanKeuanganDetailProvider>(
+      builder: (context, provider, child) {
+        // Loading state
+        if (provider.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2988EA)),
+              ),
+            ),
+          );
+        }
 
-    if (reports.isEmpty) {
-      return _buildEmptyState();
-    }
+        // Error state
+        if (provider.error != null) {
+          return Container(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: Color(0xFFEF4444),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Terjadi Kesalahan',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  provider.error!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () => provider.loadAllTransaksi(limit: 10),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2988EA),
+                  ),
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          );
+        }
 
-    return Column(
-      children: reports.asMap().entries.map((entry) {
-        final index = entry.key;
-        final report = entry.value;
-        return _buildReportItem(report, index);
-      }).toList(),
+        final transaksiList = provider.transaksiList;
+
+        // Empty state
+        if (transaksiList.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        // Display list
+        return Column(
+          children: transaksiList.asMap().entries.map((entry) {
+            final index = entry.key;
+            final transaksi = entry.value;
+            return _buildTransaksiItem(transaksi, index);
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -1530,35 +1592,6 @@ class _KeuanganPageState extends State<KeuanganPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF6B7280),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF1F1F1F),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showDatePicker() async {
     final picked = await showDatePicker(
       context: context,
@@ -1705,5 +1738,244 @@ class _KeuanganPageState extends State<KeuanganPage> {
         );
       }
     }
+  }
+
+  /// Build Transaksi Item Card (untuk Details Laporan Keuangan)
+  Widget _buildTransaksiItem(LaporanKeuanganDetail transaksi, int index) {
+    final isExpanded = _expandedIndex == index;
+    final currencyFormat = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
+
+    // Tentukan warna berdasarkan tipe
+    Color cardColor;
+    Color iconColor;
+    IconData iconData;
+    String typeLabel;
+
+    // Gunakan property 'type' dari model core (String)
+    if (transaksi.type == 'iuran') {
+      cardColor = const Color(0xFFEBF5FF); // Light blue
+      iconColor = const Color(0xFF2988EA);
+      iconData = Icons.monetization_on;
+      typeLabel = 'Pemasukan dari Iuran';
+    } else if (transaksi.type == 'pemasukan_lain') {
+      cardColor = const Color(0xFFE8F5E9); // Light green
+      iconColor = const Color(0xFF4CAF50);
+      iconData = Icons.account_balance_wallet;
+      typeLabel = 'Pemasukan Lainnya';
+    } else {
+      cardColor = const Color(0xFFFFEBEE); // Light red
+      iconColor = const Color(0xFFEF4444);
+      iconData = Icons.arrow_circle_down;
+      typeLabel = 'Pengeluaran';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE8EAF2),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header (always visible)
+          InkWell(
+            onTap: () {
+              setState(() {
+                _expandedIndex = isExpanded ? null : index;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Icon
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: iconColor.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      iconData,
+                      color: iconColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          transaksi.kategori,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F1F1F),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          typeLabel,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Dropdown icon
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded Details
+          if (isExpanded) ...[
+            const Divider(height: 1, color: Color(0xFFE8EAF2)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nominal
+                  _buildDetailRow(
+                    'Nominal',
+                    currencyFormat.format(transaksi.nominal),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Tanggal
+                  _buildDetailRow(
+                    'Tanggal',
+                    dateFormat.format(transaksi.tanggal),
+                  ),
+
+                  // Keterangan (jika ada)
+                  if (transaksi.keterangan != null &&
+                      transaksi.keterangan!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildDetailRow('Keterangan', transaksi.keterangan!),
+                  ],
+
+                  // Verifikator (jika ada)
+                  if (transaksi.verifikator != null &&
+                      transaksi.verifikator!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildDetailRow('Verifikator', transaksi.verifikator!),
+                  ],
+
+                  // Metode Pembayaran (jika ada)
+                  if (transaksi.metodePembayaran != null &&
+                      transaksi.metodePembayaran!.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _buildDetailRow(
+                      'Metode Pembayaran',
+                      transaksi.metodePembayaran!,
+                    ),
+                  ],
+
+                  // Detail khusus untuk Iuran
+                  if (transaksi.type == 'iuran') ...[
+                    if (transaksi.nikPembayar != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow('NIK Pembayar', transaksi.nikPembayar!),
+                    ],
+                  ],
+
+                  // Detail khusus untuk Pemasukan Lain
+                  if (transaksi.type == 'pemasukan_lain') ...[
+                    if (transaksi.sumberDana != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow('Sumber Dana', transaksi.sumberDana!),
+                    ],
+                  ],
+
+                  // Detail khusus untuk Pengeluaran
+                  if (transaksi.type == 'pengeluaran') ...[
+                    if (transaksi.namaPenerima != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow('Nama Penerima', transaksi.namaPenerima!),
+                    ],
+                    if (transaksi.noRekening != null) ...[
+                      const SizedBox(height: 12),
+                      _buildDetailRow('No Rekening', transaksi.noRekening!),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Helper untuk build row detail
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 140,
+          child: Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+        ),
+        const Text(
+          ': ',
+          style: TextStyle(color: Color(0xFF6B7280)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF1F1F1F),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

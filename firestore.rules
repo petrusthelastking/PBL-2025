@@ -18,6 +18,20 @@ service cloud.firestore {
       return request.resource.data != null;
     }
 
+    // Helper function - check if string is not empty
+    function isValidString(field) {
+      return field in request.resource.data &&
+             request.resource.data[field] is string &&
+             request.resource.data[field].size() > 0;
+    }
+
+    // Helper function - check if number is positive
+    function isPositiveNumber(field) {
+      return field in request.resource.data &&
+             request.resource.data[field] is number &&
+             request.resource.data[field] > 0;
+    }
+
     // ========================================================================
     // USERS COLLECTION - Password harus di-hash SHA-256
     // ========================================================================
@@ -91,17 +105,95 @@ service cloud.firestore {
     }
 
     // ========================================================================
-    // AGENDA COLLECTION
+    // AGENDA COLLECTION - Kegiatan & Broadcast dengan Validasi Ketat
     // ========================================================================
     match /agenda/{agendaId} {
+      // Read: Semua bisa lihat (transparansi agenda warga)
       allow read: if true;
+
+      // Create: Validasi field wajib dan tipe data yang ketat
       allow create: if hasValidData() &&
-                       ('title' in request.resource.data || 'judul' in request.resource.data);
-      allow update: if hasValidData();
+                       // Field wajib harus ada
+                       (isValidString('judul') || isValidString('title')) &&
+                       'type' in request.resource.data &&
+                       'tanggal' in request.resource.data &&
+                       'isActive' in request.resource.data &&
+                       // Validasi tipe data
+                       request.resource.data.type is string &&
+                       request.resource.data.tanggal is timestamp &&
+                       request.resource.data.isActive is bool &&
+                       // Validasi nilai enum untuk type
+                       request.resource.data.type in ['kegiatan', 'broadcast'] &&
+                       // isActive harus true saat create
+                       request.resource.data.isActive == true &&
+                       // Validasi optional fields jika ada (bisa null atau string)
+                       (!('deskripsi' in request.resource.data) ||
+                        request.resource.data.deskripsi == null ||
+                        request.resource.data.deskripsi is string) &&
+                       (!('description' in request.resource.data) ||
+                        request.resource.data.description == null ||
+                        request.resource.data.description is string) &&
+                       (!('lokasi' in request.resource.data) ||
+                        request.resource.data.lokasi == null ||
+                        request.resource.data.lokasi is string) &&
+                       (!('location' in request.resource.data) ||
+                        request.resource.data.location == null ||
+                        request.resource.data.location is string) &&
+                       (!('gambar' in request.resource.data) ||
+                        request.resource.data.gambar == null ||
+                        request.resource.data.gambar is string) &&
+                       (!('image' in request.resource.data) ||
+                        request.resource.data.image == null ||
+                        request.resource.data.image is string) &&
+                       (!('createdBy' in request.resource.data) ||
+                        request.resource.data.createdBy == null ||
+                        request.resource.data.createdBy is string);
+
+      // Update: Harus ada updatedAt, tidak boleh ubah field immutable
+      allow update: if hasValidData() &&
+                       'updatedAt' in request.resource.data &&
+                       // Field immutable tidak boleh diubah
+                       !('type' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                       !('createdAt' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                       !('createdBy' in request.resource.data.diff(resource.data).affectedKeys()) &&
+                       // Validasi tipe data jika field diubah
+                       (
+                         !('judul' in request.resource.data.diff(resource.data).affectedKeys()) ||
+                         (request.resource.data.judul is string &&
+                          request.resource.data.judul.size() > 0)
+                       ) &&
+                       (
+                         !('title' in request.resource.data.diff(resource.data).affectedKeys()) ||
+                         (request.resource.data.title is string &&
+                          request.resource.data.title.size() > 0)
+                       ) &&
+                       (
+                         !('tanggal' in request.resource.data.diff(resource.data).affectedKeys()) ||
+                         request.resource.data.tanggal is timestamp
+                       ) &&
+                       (
+                         !('isActive' in request.resource.data.diff(resource.data).affectedKeys()) ||
+                         request.resource.data.isActive is bool
+                       );
+
+      // Delete: Allow (soft delete dengan isActive di app lebih aman)
       allow delete: if true;
 
-      match /broadcasts/{broadcastId} {
-        allow read, write: if true;
+      // Subcollection untuk dokumentasi kegiatan (future feature)
+      match /dokumentasi/{dokumentasiId} {
+        allow read: if true;
+        allow create: if hasValidData() &&
+                         'imageUrl' in request.resource.data;
+        allow update, delete: if true;
+      }
+
+      // Subcollection untuk komentar broadcast (future feature)
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if hasValidData() &&
+                         'userId' in request.resource.data &&
+                         'comment' in request.resource.data;
+        allow update, delete: if true;
       }
     }
 
@@ -237,7 +329,7 @@ service cloud.firestore {
     }
 
     // ========================================================================
-    // SECURITY NOTES
+    // SECURITY NOTES & CHANGELOG
     // ========================================================================
     // 🔒 PASSWORD SECURITY:
     //    - Password WAJIB di-hash SHA-256 sebelum disimpan (64 char hex)
@@ -254,11 +346,30 @@ service cloud.firestore {
     //    - Rules fokus pada data validation, bukan authorization
     //    - Admin/petugas check di aplikasi sebelum operasi sensitive
     //
+    // 📅 AGENDA COLLECTION (UPDATE):
+    //    - Validasi ketat untuk field wajib: judul/title, type, tanggal
+    //    - Type harus 'kegiatan' atau 'broadcast' (enum validation)
+    //    - isActive harus true saat create (soft delete pattern)
+    //    - Field immutable: type, createdAt, createdBy (tidak bisa diubah)
+    //    - Support backward compatibility (judul/title, deskripsi/description)
+    //    - Subcollection untuk dokumentasi dan comments (future features)
+    //    - Tanggal harus timestamp (validasi tipe data)
+    //
     // ✅ KEAMANAN:
     //    - Semua collection punya validasi dasar
     //    - Tidak ada catch-all rule (default deny)
     //    - Field sensitive (email, NIK) protected dari update
     //    - Password harus hash SHA-256 (tidak bisa plaintext)
+    //    - Agenda type validation mencegah data tidak valid
+    //    - Helper functions untuk validasi yang reusable
+    //
+    // 📝 CHANGELOG:
+    //    - 2025-11-22: Enhanced AGENDA rules dengan validasi ketat
+    //    - Added helper functions: hasValidData, isValidString, isPositiveNumber
+    //    - Added type enum validation untuk agenda (kegiatan/broadcast)
+    //    - Added immutable field protection untuk agenda
+    //    - Added subcollection rules untuk dokumentasi & comments
+    //    - Added backward compatibility support (judul/title, deskripsi/description)
     //
     // ========================================================================
   }

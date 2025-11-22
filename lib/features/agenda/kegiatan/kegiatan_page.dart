@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'edit_kegiatan_page.dart';
-import 'tambah_kegiatan_page.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../broadcast/broadcast_page.dart';
+import 'tambah_kegiatan_page.dart';
+import 'edit_kegiatan_page.dart';
+import '../../../core/providers/agenda_provider.dart';
 
 class AgendaPage extends StatefulWidget {
   const AgendaPage({super.key});
@@ -12,146 +15,253 @@ class AgendaPage extends StatefulWidget {
 }
 
 class _AgendaPageState extends State<AgendaPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Load agenda data saat page dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<AgendaProvider>(context, listen: false);
+      provider.loadKegiatan();
+      provider.loadBroadcast();
+      provider.loadSummary();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2988EA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // HEADER dengan gradient modern
-            Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF2988EA), Color(0xFF2563EB)],
-                ),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: Column(
+        children: [
+          // Header dengan gradient modern & stats
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2988EA), Color(0xFF1E6FBA), Color(0xFF2563EB)],
+                stops: [0.0, 0.5, 1.0],
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                  spreadRadius: -5,
+                ),
+              ],
+            ),
+            child: SafeArea(
+              bottom: false,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Back button dengan container modern
-                  Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 1,
+                  // Header bar
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Row(
+                      children: [
+                        // Back button dengan glass morphism
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 22),
-                          onPressed: () => Navigator.pop(context),
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Kelola Agenda",
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context),
+                              borderRadius: BorderRadius.circular(14),
+                              child: const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Icon(
+                                  Icons.arrow_back_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Kelola kegiatan & broadcast warga",
-                              style: GoogleFonts.poppins(
-                                color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        // Title
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.calendar_month_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      "Kelola Agenda",
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.white,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: -0.8,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                "Kelola kegiatan & broadcast warga",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Tab Cards dengan design modern & animasi
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+                    child: Consumer<AgendaProvider>(
+                      builder: (context, provider, child) {
+                        final summary = provider.summary;
+                        final kegiatanCount = summary['totalKegiatan']?.toString() ?? '0';
+                        final broadcastCount = summary['totalBroadcast']?.toString() ?? '0';
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _ModernTabCard(
+                                title: "Kegiatan",
+                                icon: Icons.event_note_rounded,
+                                count: kegiatanCount,
+                                isActive: true,
+                                onTap: () {
+                                  // Sudah di halaman ini
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _ModernTabCard(
+                                title: "Broadcast",
+                                icon: Icons.campaign_rounded,
+                                count: broadcastCount,
+                                isActive: false,
+                                onTap: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const BroadcastPage(),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  // Tab Cards dengan design modern
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ModernTabCard(
-                          title: "Kegiatan",
-                          icon: Icons.event_note_rounded,
-                          count: "100",
-                          isActive: true,
-                          onTap: () {
-                            // Sudah di halaman ini
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _ModernTabCard(
-                          title: "Broadcast",
-                          icon: Icons.campaign_rounded,
-                          count: "100",
-                          isActive: false,
-                          onTap: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const BroadcastPage(),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
-            // List content
-            const Expanded(child: DaftarKegiatanList()),
-          ],
-        ),
+          ),
+          // Daftar Kegiatan
+          const Expanded(
+            child: DaftarKegiatanList(),
+          ),
+        ],
       ),
-      // FAB dengan gradient modern
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF2988EA).withValues(alpha: 0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-              spreadRadius: 2,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 20, right: 4),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
             ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TambahKegiatanPage()),
-            );
-          },
-          backgroundColor: const Color(0xFF2988EA),
-          elevation: 0,
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
-          label: Text(
-            'Tambah',
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2988EA).withValues(alpha: 0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+                spreadRadius: -4,
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TambahKegiatanPage()),
+                );
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.add_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Tambah',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -160,8 +270,8 @@ class _AgendaPageState extends State<AgendaPage> {
   }
 }
 
-// Modern Tab Card untuk Kegiatan & Broadcast
-class _ModernTabCard extends StatelessWidget {
+// Modern Tab Card untuk Kegiatan & Broadcast dengan animasi
+class _ModernTabCard extends StatefulWidget {
   final String title;
   final IconData icon;
   final String count;
@@ -177,89 +287,184 @@ class _ModernTabCard extends StatelessWidget {
   });
 
   @override
+  State<_ModernTabCard> createState() => _ModernTabCardState();
+}
+
+class _ModernTabCardState extends State<_ModernTabCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.white, Color(0xFFF8F9FF)],
-                )
-              : null,
-          color: isActive ? null : Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isActive
-                ? Colors.white.withValues(alpha: 0.8)
-                : Colors.white.withValues(alpha: 0.3),
-            width: isActive ? 1.5 : 1,
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: widget.isActive
+                ? const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFFFFFF),
+                      Color(0xFFF8FAFFD),
+                      Color(0xFFEFF6FF),
+                    ],
+                  )
+                : null,
+            color: widget.isActive ? null : Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: widget.isActive
+                  ? Colors.white.withValues(alpha: 0.9)
+                  : Colors.white.withValues(alpha: 0.25),
+              width: widget.isActive ? 2 : 1.5,
+            ),
+            boxShadow: widget.isActive
+                ? [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                      spreadRadius: -2,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon dengan container
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? const Color(0xFF2988EA).withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: isActive ? const Color(0xFF2988EA) : Colors.white,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 14),
-            // Title
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: isActive ? const Color(0xFF1F2937) : Colors.white,
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(height: 4),
-            // Count
-            Row(
-              children: [
-                Text(
-                  count,
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: isActive ? const Color(0xFF2988EA) : Colors.white.withValues(alpha: 0.9),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon dengan background gradient
+              Container(
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  gradient: widget.isActive
+                      ? const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
+                        )
+                      : null,
+                  color: widget.isActive
+                      ? null
+                      : Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(13),
+                  boxShadow: widget.isActive
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'Data',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: isActive ? const Color(0xFF6B7280) : Colors.white.withValues(alpha: 0.7),
-                  ),
+                child: Icon(
+                  widget.icon,
+                  color: widget.isActive
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.95),
+                  size: 26,
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 16),
+              // Title dengan animasi
+              Text(
+                widget.title,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: widget.isActive
+                      ? const Color(0xFF1F2937)
+                      : Colors.white,
+                  letterSpacing: 0.3,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 6),
+              // Count dengan style menarik
+              Row(
+                children: [
+                  Text(
+                    widget.count,
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: widget.isActive
+                          ? const Color(0xFF2988EA)
+                          : Colors.white,
+                      height: 1,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.isActive
+                          ? const Color(0xFF2988EA).withValues(alpha: 0.12)
+                          : Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Data',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: widget.isActive
+                            ? const Color(0xFF2988EA)
+                            : Colors.white.withValues(alpha: 0.9),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -275,47 +480,106 @@ class DaftarKegiatanList extends StatefulWidget {
 }
 
 class _DaftarKegiatanListState extends State<DaftarKegiatanList> {
-  final List<bool> _expandedList = List.generate(5, (_) => false);
+  final Map<String, bool> _expandedMap = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Load kegiatan saat widget diinisialisasi
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AgendaProvider>(context, listen: false).loadKegiatan();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F7FA),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2988EA).withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
+            spreadRadius: -4,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
+          // Header section dengan gradient subtle
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.white,
+                  Colors.white.withValues(alpha: 0.95),
+                ],
+              ),
+            ),
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "Daftar Kegiatan",
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF1F2937),
-                    letterSpacing: -0.5,
-                  ),
+                // Title dengan icon
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.event_note_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Text(
+                      "Daftar Kegiatan",
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF1F2937),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 18),
-                // Search & Filter Row dengan modern design
+                const SizedBox(height: 20),
+                // Search & Filter modern dengan shadow
                 Row(
                   children: [
                     Expanded(
                       child: Container(
-                        height: 52,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFE8EAF2),
-                            width: 1,
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2988EA).withValues(alpha: 0.08),
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                              spreadRadius: -4,
+                            ),
+                          ],
                         ),
                         child: TextFormField(
                           decoration: InputDecoration(
@@ -323,62 +587,83 @@ class _DaftarKegiatanListState extends State<DaftarKegiatanList> {
                             hintStyle: GoogleFonts.poppins(
                               color: const Color(0xFF9CA3AF),
                               fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                            prefixIcon: const Icon(
-                              Icons.search_rounded,
-                              color: Color(0xFF6B7280),
-                              size: 22,
+                            prefixIcon: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: const Icon(
+                                Icons.search_rounded,
+                                color: Color(0xFF2988EA),
+                                size: 22,
+                              ),
                             ),
-                            border: InputBorder.none,
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: const Color(0xFFE5E7EB).withValues(alpha: 0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: const Color(0xFFE5E7EB).withValues(alpha: 0.5),
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF2988EA),
+                                width: 2,
+                              ),
+                            ),
                             contentPadding: const EdgeInsets.symmetric(
-                              vertical: 16,
+                              horizontal: 16,
+                              vertical: 14,
                             ),
                           ),
+                          onChanged: (value) {
+                            // TODO: Implement search
+                          },
                         ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Date picker button dengan gradient
-                    InkWell(
-                      onTap: () {
-                        /* Aksi filter tanggal */
-                      },
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF2988EA), Color(0xFF2563EB)],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2988EA).withValues(alpha: 0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                    // Filter button dengan gradient
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today_rounded,
-                              size: 18,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            // TODO: Implement date filter
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            child: const Icon(
+                              Icons.tune_rounded,
                               color: Colors.white,
+                              size: 24,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Filter",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -388,275 +673,520 @@ class _DaftarKegiatanListState extends State<DaftarKegiatanList> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                final isExpanded = _expandedList[index];
-                final String title = index.isEven
-                    ? "Gotong Royong"
-                    : "Rapat RT";
-                final String date = index.isEven
-                    ? "15 Oktober 2025"
-                    : "17 Oktober 2025";
-                final String kategori = index.isEven
-                    ? "Sosial"
-                    : "Administrasi";
-                final String lokasi = index.isEven
-                    ? "Masjid Komplek"
-                    : "Balai RW";
-                final String deskripsi = index.isEven
-                    ? "Membersihkan Masjid..."
-                    : "Rapat bulanan...";
-
-                return GestureDetector(
-                  onTap: () => setState(
-                    () => _expandedList[index] = !_expandedList[index],
-                  ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.only(bottom: 14),
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Colors.white, Color(0xFFFAFBFF)],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2988EA).withValues(alpha: 0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                          spreadRadius: -2,
-                        ),
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+            child: Consumer<AgendaProvider>(
+              builder: (context, provider, child) {
+                // Loading state
+                if (provider.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2988EA)),
                     ),
+                  );
+                }
+
+                // Error state
+                if (provider.error != null) {
+                  return Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            // Icon dengan gradient background
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Color(0xFF2988EA), Color(0xFF2563EB)],
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFF2988EA).withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.event_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    title,
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 16,
-                                      color: const Color(0xFF1F2937),
-                                      letterSpacing: 0.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.calendar_today_rounded,
-                                        size: 14,
-                                        color: const Color(0xFF6B7280),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        date,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 13,
-                                          color: const Color(0xFF6B7280),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Expand icon dengan background
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                isExpanded
-                                    ? Icons.keyboard_arrow_up_rounded
-                                    : Icons.keyboard_arrow_down_rounded,
-                                color: const Color(0xFF2988EA),
-                                size: 20,
-                              ),
-                            ),
-                          ],
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red.shade300,
                         ),
-                        AnimatedCrossFade(
-                          duration: const Duration(milliseconds: 200),
-                          crossFadeState: isExpanded
-                              ? CrossFadeState.showSecond
-                              : CrossFadeState.showFirst,
-                          firstChild: const SizedBox.shrink(),
-                          secondChild: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Divider dengan gradient
-                              const SizedBox(height: 16),
-                              Container(
-                                height: 1,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      const Color(0xFF2988EA).withValues(alpha: 0.1),
-                                      const Color(0xFF2988EA).withValues(alpha: 0.05),
-                                      const Color(0xFF2988EA).withValues(alpha: 0.1),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _DetailColumn(
-                                      label: "Kategori",
-                                      value: kategori,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _DetailColumn(
-                                      label: "Lokasi",
-                                      value: lokasi,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _DetailColumn(
-                                      label: "Penanggung Jawab",
-                                      value: "Pak Rusdi",
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: _DetailColumn(
-                                      label: "Dibuat oleh",
-                                      value: "Admin RW",
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              _DetailColumn(
-                                label: "Deskripsi",
-                                value: deskripsi,
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  OutlinedButton(
-                                    onPressed: () {},
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                        color: Color(0xFF2F80ED),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    child: const Text(
-                                      "Dokumentasi",
-                                      style: TextStyle(
-                                        color: Color(0xFF2F80ED),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF2F80ED),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              EditKegiatanPage(),
-                                        ),
-                                      );
-                                    },
-                                    child: const Text("Edit"),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFFEF4444),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 18,
-                                        vertical: 8,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                    onPressed: () {},
-                                    child: const Text("Hapus"),
-                                  ),
-                                ],
-                              ),
-                            ],
+                        const SizedBox(height: 16),
+                        Text(
+                          'Terjadi kesalahan',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            provider.error!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: const Color(0xFF6B7280),
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                  );
+                }
+
+                final kegiatanList = provider.kegiatanList;
+
+                // Empty state
+                if (kegiatanList.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.event_busy_rounded,
+                          size: 64,
+                          color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Belum ada kegiatan',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1F2937),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32),
+                          child: Text(
+                            'Tambah kegiatan baru dengan tombol + di bawah',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: const Color(0xFF6B7280),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Data list dengan padding yang lebih baik
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  itemCount: kegiatanList.length,
+                  itemBuilder: (context, index) {
+                    final kegiatan = kegiatanList[index];
+                    final isExpanded = _expandedMap[kegiatan.id] ?? false;
+
+                    final String title = kegiatan.judul;
+                    final String date = DateFormat('dd MMMM yyyy', 'id_ID').format(kegiatan.tanggal);
+                    final String lokasi = kegiatan.lokasi ?? '-';
+                    final String deskripsi = kegiatan.deskripsi ?? '-';
+
+                    return GestureDetector(
+                      onTap: () => setState(
+                        () => _expandedMap[kegiatan.id] = !isExpanded,
+                      ),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isExpanded
+                                ? const Color(0xFF2988EA).withValues(alpha: 0.3)
+                                : const Color(0xFFE5E7EB).withValues(alpha: 0.6),
+                            width: isExpanded ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isExpanded
+                                  ? const Color(0xFF2988EA).withValues(alpha: 0.12)
+                                  : const Color(0xFF000000).withValues(alpha: 0.04),
+                              blurRadius: isExpanded ? 20 : 12,
+                              offset: Offset(0, isExpanded ? 8 : 4),
+                              spreadRadius: isExpanded ? -2 : -4,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                // Icon dengan gradient background
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF2988EA).withValues(alpha: 0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.event_note_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: GoogleFonts.poppins(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16,
+                                          color: const Color(0xFF1F2937),
+                                          letterSpacing: -0.3,
+                                          height: 1.3,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      // Badge tanggal dengan design modern
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2988EA).withValues(alpha: 0.08),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: const Color(0xFF2988EA).withValues(alpha: 0.15),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_today_rounded,
+                                              size: 13,
+                                              color: Color(0xFF2988EA),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              date,
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF2988EA),
+                                                letterSpacing: 0.2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                // Expand icon dengan background
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: isExpanded
+                                        ? const Color(0xFF2988EA).withValues(alpha: 0.1)
+                                        : const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: AnimatedRotation(
+                                    turns: isExpanded ? 0.5 : 0,
+                                    duration: const Duration(milliseconds: 300),
+                                    child: Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: isExpanded
+                                          ? const Color(0xFF2988EA)
+                                          : const Color(0xFF6B7280),
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isExpanded) ...[
+                              const SizedBox(height: 16),
+                              // Divider dengan gradient
+                              Container(
+                                height: 1.5,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.transparent,
+                                      const Color(0xFF2988EA).withValues(alpha: 0.2),
+                                      const Color(0xFF2988EA).withValues(alpha: 0.15),
+                                      const Color(0xFF2988EA).withValues(alpha: 0.2),
+                                      Colors.transparent,
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              // Info cards dengan background
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB).withValues(alpha: 0.6),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    _DetailRow(
+                                      icon: Icons.location_on_rounded,
+                                      label: "Lokasi",
+                                      value: lokasi,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _DetailRow(
+                                      icon: Icons.description_rounded,
+                                      label: "Deskripsi",
+                                      value: deskripsi,
+                                    ),
+                                    const SizedBox(height: 14),
+                                    _DetailRow(
+                                      icon: Icons.person_rounded,
+                                      label: "Dibuat oleh",
+                                      value: kegiatan.createdBy.isNotEmpty
+                                          ? kegiatan.createdBy
+                                          : 'Admin',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              // Action buttons dengan design modern
+                              Row(
+                                children: [
+                                  // Edit button dengan gradient
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        gradient: const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [Color(0xFF2988EA), Color(0xFF1E6FBA)],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF2988EA).withValues(alpha: 0.25),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => EditKegiatanPage(
+                                                  kegiatan: kegiatan,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                              horizontal: 16,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.edit_rounded,
+                                                  size: 18,
+                                                  color: Colors.white,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Edit',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                    letterSpacing: 0.3,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // Delete button
+                                  Expanded(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF2F2),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFFEF4444).withValues(alpha: 0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () async {
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(20),
+                                                ),
+                                                title: Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets.all(10),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      child: const Icon(
+                                                        Icons.delete_rounded,
+                                                        color: Color(0xFFEF4444),
+                                                        size: 24,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Text(
+                                                      'Hapus Kegiatan',
+                                                      style: GoogleFonts.poppins(
+                                                        fontWeight: FontWeight.w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                content: Text(
+                                                  'Apakah Anda yakin ingin menghapus kegiatan "$title"?',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 14,
+                                                    color: const Color(0xFF6B7280),
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, false),
+                                                    child: Text(
+                                                      'Batal',
+                                                      style: GoogleFonts.poppins(
+                                                        fontWeight: FontWeight.w600,
+                                                        color: const Color(0xFF6B7280),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () => Navigator.pop(context, true),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: const Color(0xFFEF4444),
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      elevation: 0,
+                                                    ),
+                                                    child: Text(
+                                                      'Hapus',
+                                                      style: GoogleFonts.poppins(
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirmed == true && context.mounted) {
+                                              try {
+                                                await Provider.of<AgendaProvider>(
+                                                  context,
+                                                  listen: false,
+                                                ).deleteAgenda(kegiatan.id);
+
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Kegiatan berhasil dihapus',
+                                                        style: GoogleFonts.poppins(),
+                                                      ),
+                                                      backgroundColor: Colors.green,
+                                                    ),
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'Gagal menghapus kegiatan: $e',
+                                                        style: GoogleFonts.poppins(),
+                                                      ),
+                                                      backgroundColor: Colors.red,
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            }
+                                          },
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                              horizontal: 16,
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.delete_rounded,
+                                                  size: 18,
+                                                  color: Color(0xFFEF4444),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Hapus',
+                                                  style: GoogleFonts.poppins(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: const Color(0xFFEF4444),
+                                                    letterSpacing: 0.3,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -667,11 +1197,76 @@ class _DaftarKegiatanListState extends State<DaftarKegiatanList> {
   }
 }
 
-// Widget untuk menampilkan label dan value detail
+// Widget helper untuk menampilkan detail dengan icon
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2988EA).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: const Color(0xFF2988EA),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF6B7280),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Legacy widget - keep for backward compatibility
 class _DetailColumn extends StatelessWidget {
   final String label;
   final String value;
-  const _DetailColumn({required this.label, required this.value, super.key});
+
+  const _DetailColumn({
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -680,9 +1275,13 @@ class _DetailColumn extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF7A7C89),
+          ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 6),
         Text(
           value,
           style: GoogleFonts.poppins(
@@ -696,4 +1295,3 @@ class _DetailColumn extends StatelessWidget {
   }
 }
 
-// Using unified AppBottomNavigation from core/widgets

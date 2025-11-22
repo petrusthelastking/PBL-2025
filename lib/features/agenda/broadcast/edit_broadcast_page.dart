@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/models/agenda_model.dart';
+import '../../../core/providers/agenda_provider.dart';
 
 class EditBroadcastPage extends StatefulWidget {
-  const EditBroadcastPage({super.key});
+  final AgendaModel broadcast;
+
+  const EditBroadcastPage({
+    super.key,
+    required this.broadcast,
+  });
 
   @override
   State<EditBroadcastPage> createState() => _EditBroadcastPageState();
@@ -10,20 +19,15 @@ class EditBroadcastPage extends StatefulWidget {
 
 class _EditBroadcastPageState extends State<EditBroadcastPage> {
   final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController _judulController = TextEditingController(
-    text: "Pengumuman",
-  );
-  final TextEditingController _isiController = TextEditingController(
-    text: "Donor Darah di posko...",
-  );
-
-  String? _selectedImageFileName = "poster_donor.jpg";
-  String? _selectedDocumentFileName = "surat_undangan.pdf";
+  late TextEditingController _judulController;
+  late TextEditingController _isiController;
 
   @override
   void initState() {
     super.initState();
+    // Initialize controllers with existing data
+    _judulController = TextEditingController(text: widget.broadcast.judul);
+    _isiController = TextEditingController(text: widget.broadcast.deskripsi ?? '');
   }
 
   @override
@@ -33,26 +37,145 @@ class _EditBroadcastPageState extends State<EditBroadcastPage> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    setState(() {
-      _selectedImageFileName = "gambar_baru.png";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logika ganti gambar belum diimplementasikan.'),
-      ),
-    );
-  }
+  // Fungsi untuk update broadcast ke Firestore
+  Future<void> _updateBroadcast() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-  Future<void> _pickDocument() async {
-    setState(() {
-      _selectedDocumentFileName = "dokumen_baru.docx";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logika ganti dokumen belum diimplementasikan.'),
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2988EA)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Memperbarui broadcast...',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+
+    try {
+      // Prepare update data
+      final updateData = {
+        'judul': _judulController.text.trim(),
+        'title': _judulController.text.trim(),
+        'deskripsi': _isiController.text.trim(),
+        'description': _isiController.text.trim(),
+        'updatedAt': DateTime.now(),
+      };
+
+      // Update menggunakan provider
+      final provider = Provider.of<AgendaProvider>(context, listen: false);
+      final success = await provider.updateAgenda(widget.broadcast.id, updateData);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      if (success) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Broadcast berhasil diperbarui!',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+
+          // Navigate back
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) Navigator.pop(context);
+          });
+        }
+      } else {
+        // Show error from provider
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      provider.error ?? 'Gagal memperbarui broadcast',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error: ${e.toString()}',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+
+      debugPrint('❌ Error updating broadcast: $e');
+    }
   }
 
   // Modern TextField dengan gradient & shadow
@@ -152,115 +275,6 @@ class _EditBroadcastPageState extends State<EditBroadcastPage> {
     );
   }
 
-  // Modern File Upload Area
-  Widget _buildFileUploadArea({
-    required String label,
-    required String buttonText,
-    required IconData buttonIcon,
-    required VoidCallback onUploadPressed,
-    String? selectedFileName,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: const Color(0xFF1F2937),
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2988EA).withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: -2,
-              ),
-            ],
-          ),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(
-                width: 1,
-                color: const Color(0xFFE8EAF2),
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    selectedFileName != null ? Icons.insert_drive_file_rounded : Icons.upload_file_rounded,
-                    size: 32,
-                    color: const Color(0xFF2988EA),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (selectedFileName != null)
-                  Text(
-                    selectedFileName,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF1F2937),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  )
-                else
-                  Text(
-                    'Belum ada file dipilih',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF9CA3AF),
-                      fontSize: 14,
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: Icon(buttonIcon, size: 20),
-                  label: Text(
-                    buttonText,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onPressed: onUploadPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2988EA),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -343,42 +357,28 @@ class _EditBroadcastPageState extends State<EditBroadcastPage> {
                       controller: _judulController,
                       label: "Judul Broadcast",
                       hint: "Masukkan judul broadcast",
-                      validator: (v) => v == null || v.isEmpty
-                          ? 'Judul tidak boleh kosong'
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Judul tidak boleh kosong';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 20),
                     _buildTextField(
                       controller: _isiController,
-                      label: "Isi Broadcast",
-                      hint: "Masukkan isi broadcast",
-                      maxLines: 5,
-                      validator: (v) => v == null || v.isEmpty
-                          ? 'Isi broadcast tidak boleh kosong'
-                          : null,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildFileUploadArea(
-                      label: "Lampiran Gambar",
-                      buttonText: _selectedImageFileName == null
-                          ? "Upload Gambar"
-                          : "Ganti Gambar",
-                      buttonIcon: Icons.image_rounded,
-                      onUploadPressed: _pickImage,
-                      selectedFileName: _selectedImageFileName,
-                    ),
-                    const SizedBox(height: 20),
-                    _buildFileUploadArea(
-                      label: "Lampiran Dokumen",
-                      buttonText: _selectedDocumentFileName == null
-                          ? "Upload Dokumen PDF"
-                          : "Ganti Dokumen",
-                      buttonIcon: Icons.description_rounded,
-                      onUploadPressed: _pickDocument,
-                      selectedFileName: _selectedDocumentFileName,
+                      label: "Isi Pesan",
+                      hint: "Masukkan isi pesan broadcast",
+                      maxLines: 8,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Isi pesan tidak boleh kosong';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 40),
-                    // Button Update dengan gradient modern
+                    // Button Submit dengan gradient modern
                     Container(
                       width: double.infinity,
                       height: 56,
@@ -406,34 +406,7 @@ class _EditBroadcastPageState extends State<EditBroadcastPage> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Row(
-                                  children: [
-                                    const Icon(Icons.check_circle, color: Colors.white),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Broadcast berhasil diperbarui!',
-                                      style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                backgroundColor: const Color(0xFF10B981),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
-                            Future.delayed(const Duration(seconds: 1), () {
-                              Navigator.pop(context);
-                            });
-                          }
-                        },
+                        onPressed: _updateBroadcast,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -467,3 +440,4 @@ class _EditBroadcastPageState extends State<EditBroadcastPage> {
     );
   }
 }
+

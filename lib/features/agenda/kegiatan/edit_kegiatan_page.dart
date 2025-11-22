@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/models/agenda_model.dart';
+import '../../../core/providers/agenda_provider.dart';
 
 class EditKegiatanPage extends StatefulWidget {
-  const EditKegiatanPage({super.key});
+  final AgendaModel kegiatan;
+
+  const EditKegiatanPage({
+    super.key,
+    required this.kegiatan,
+  });
 
   @override
   State<EditKegiatanPage> createState() => _EditKegiatanPageState();
@@ -11,46 +20,25 @@ class EditKegiatanPage extends StatefulWidget {
 
 class _EditKegiatanPageState extends State<EditKegiatanPage> {
   final _formKey = GlobalKey<FormState>();
-
-  final TextEditingController _namaController = TextEditingController(
-    text: "Gotong Royong",
-  );
-  final TextEditingController _tanggalController = TextEditingController(
-    text: "15/10/2025",
-  );
-  final TextEditingController _lokasiController = TextEditingController(
-    text: "Masjid Komplek",
-  );
-  final TextEditingController _pjController = TextEditingController(
-    text: "Pak Rusdi",
-  );
-  final TextEditingController _deskripsiController = TextEditingController(
-    text: "Membersihkan Masjid kita tercinta ini",
-  );
-
-  String? _selectedKategori = 'Komunitas & Sosial';
+  late TextEditingController _namaController;
+  late TextEditingController _tanggalController;
+  late TextEditingController _lokasiController;
+  late TextEditingController _pjController;
+  late TextEditingController _deskripsiController;
   DateTime? _selectedDate;
-
-  final List<String> _kategoriOptions = [
-    'Komunitas & Sosial',
-    'Kebersihan & Keamanan',
-    'Keagamaan',
-    'Pendidikan',
-    'Kesehatan & Olahraga',
-    'Lainnya',
-  ];
-
-  String? _selectedDocumentFileName = "dokumentasi_lama.jpg";
 
   @override
   void initState() {
     super.initState();
-    try {
-      _selectedDate = DateFormat('dd/MM/yyyy').parse(_tanggalController.text);
-    } catch (e) {
-      _selectedDate = DateTime.now();
-      _tanggalController.text = DateFormat('dd/MM/yyyy').format(_selectedDate!);
-    }
+    // Initialize controllers with existing data
+    _namaController = TextEditingController(text: widget.kegiatan.judul);
+    _lokasiController = TextEditingController(text: widget.kegiatan.lokasi ?? '');
+    _deskripsiController = TextEditingController(text: widget.kegiatan.deskripsi ?? '');
+    _pjController = TextEditingController(text: widget.kegiatan.createdBy);
+    _selectedDate = widget.kegiatan.tanggal;
+    _tanggalController = TextEditingController(
+      text: DateFormat('dd/MM/yyyy').format(widget.kegiatan.tanggal),
+    );
   }
 
   @override
@@ -61,6 +49,173 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
     _pjController.dispose();
     _deskripsiController.dispose();
     super.dispose();
+  }
+
+  // Fungsi untuk update kegiatan ke Firestore
+  Future<void> _updateKegiatan() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 12),
+              Text(
+                'Tanggal harus dipilih!',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2988EA)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Memperbarui kegiatan...',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Prepare update data
+      final updateData = {
+        'judul': _namaController.text.trim(),
+        'title': _namaController.text.trim(),
+        'tanggal': _selectedDate,
+        'lokasi': _lokasiController.text.trim(),
+        'location': _lokasiController.text.trim(),
+        'deskripsi': _deskripsiController.text.trim(),
+        'description': _deskripsiController.text.trim(),
+        'updatedAt': DateTime.now(),
+      };
+
+      // Update menggunakan provider
+      final provider = Provider.of<AgendaProvider>(context, listen: false);
+      final success = await provider.updateAgenda(widget.kegiatan.id, updateData);
+
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      if (success) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Kegiatan berhasil diperbarui!',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+
+          // Navigate back
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) Navigator.pop(context);
+          });
+        }
+      } else {
+        // Show error from provider
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      provider.error ?? 'Gagal memperbarui kegiatan',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Close loading dialog
+      if (mounted) Navigator.pop(context);
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Error: ${e.toString()}',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+
+      debugPrint('❌ Error updating kegiatan: $e');
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -78,22 +233,12 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
     }
   }
 
-  Future<void> _pickDocument() async {
-    setState(() {
-      _selectedDocumentFileName = "dokumentasi_baru.pdf";
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Logika ganti dokumen belum diimplementasikan.'),
-      ),
-    );
-  }
-
   // Modern TextField dengan gradient & shadow
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
     required String hint,
+    TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     int? maxLines = 1,
     bool readOnly = false,
@@ -127,6 +272,7 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
           ),
           child: TextFormField(
             controller: controller,
+            keyboardType: keyboardType,
             validator: validator,
             maxLines: maxLines,
             readOnly: readOnly,
@@ -190,233 +336,6 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
                       child: suffixIcon,
                     )
                   : null,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Modern DropdownField dengan gradient & shadow
-  Widget _buildDropdownField({
-    required String label,
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required void Function(String?)? onChanged,
-    String? Function(String?)? validator,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: const Color(0xFF1F2937),
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2988EA).withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: -2,
-              ),
-            ],
-          ),
-          child: DropdownButtonFormField<String>(
-            value: value,
-            validator: validator,
-            hint: Text(
-              hint,
-              style: GoogleFonts.poppins(
-                color: const Color(0xFF9CA3AF),
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF1F2937),
-            ),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  width: 1,
-                  color: Color(0xFFE8EAF2),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  width: 1,
-                  color: Color(0xFFE8EAF2),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  width: 2,
-                  color: Color(0xFF2988EA),
-                ),
-              ),
-              errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  width: 1,
-                  color: Color(0xFFEF4444),
-                ),
-              ),
-              focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  width: 2,
-                  color: Color(0xFFEF4444),
-                ),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 16,
-              ),
-            ),
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(item),
-              );
-            }).toList(),
-            onChanged: onChanged,
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: Color(0xFF2988EA),
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Modern File Upload Area
-  Widget _buildFileUploadArea({
-    required String label,
-    required String buttonText,
-    required IconData buttonIcon,
-    required VoidCallback onUploadPressed,
-    String? selectedFileName,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            color: const Color(0xFF1F2937),
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2988EA).withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-                spreadRadius: -2,
-              ),
-            ],
-          ),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(
-                width: 1,
-                color: const Color(0xFFE8EAF2),
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    selectedFileName != null ? Icons.insert_drive_file_rounded : Icons.upload_file_rounded,
-                    size: 32,
-                    color: const Color(0xFF2988EA),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (selectedFileName != null)
-                  Text(
-                    selectedFileName,
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF1F2937),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                  )
-                else
-                  Text(
-                    'Belum ada dokumentasi',
-                    style: GoogleFonts.poppins(
-                      color: const Color(0xFF9CA3AF),
-                      fontSize: 14,
-                    ),
-                  ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: Icon(buttonIcon, size: 20),
-                  label: Text(
-                    buttonText,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onPressed: onUploadPressed,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2988EA),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -502,166 +421,133 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                  _buildTextField(
-                    controller: _namaController,
-                    label: "Nama Kegiatan",
-                    hint: "Masukkan nama kegiatan",
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Nama kegiatan tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildDropdownField(
-                    label: "Kategori",
-                    hint: "Pilih Kategori",
-                    value: _selectedKategori,
-                    items: _kategoriOptions,
-                    onChanged: (nv) => setState(() => _selectedKategori = nv),
-                    validator: (v) =>
-                        v == null ? 'Kategori harus dipilih' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _tanggalController,
-                    label: "Tanggal",
-                    hint: "dd/mm/yyyy",
-                    readOnly: true,
-                    onTap: () => _selectDate(context),
-                    suffixIcon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2988EA).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.calendar_today_rounded,
-                        size: 20,
-                        color: Color(0xFF2988EA),
-                      ),
-                    ),
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Tanggal tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _lokasiController,
-                    label: "Lokasi",
-                    hint: "Masukkan lokasi",
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Lokasi tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _pjController,
-                    label: "Penanggung Jawab",
-                    hint: "Masukkan nama Penanggung Jawab",
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Penanggung Jawab tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    controller: _deskripsiController,
-                    label: "Deskripsi",
-                    hint: "Masukkan deskripsi kegiatan",
-                    maxLines: 3,
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Deskripsi tidak boleh kosong'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildFileUploadArea(
-                    label: "Dokumentasi",
-                    buttonText: _selectedDocumentFileName == null
-                        ? "Upload Dokumentasi"
-                        : "Ganti Dokumentasi",
-                    buttonIcon: Icons.upload_file_rounded,
-                    onUploadPressed: _pickDocument,
-                    selectedFileName: _selectedDocumentFileName,
-                  ),
-                  const SizedBox(height: 40),
-                  // Button Update dengan gradient modern
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF2988EA), Color(0xFF2563EB)],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF2988EA).withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.check_circle, color: Colors.white),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Kegiatan berhasil diperbarui!',
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: const Color(0xFF10B981),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                          // Navigate back after delay
-                          Future.delayed(const Duration(seconds: 1), () {
-                            Navigator.pop(context);
-                          });
+                    _buildTextField(
+                      controller: _namaController,
+                      label: "Nama Kegiatan",
+                      hint: "Masukkan nama kegiatan",
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Nama kegiatan tidak boleh kosong';
                         }
+                        return null;
                       },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.save_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            "Simpan Perubahan",
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _tanggalController,
+                      label: "Tanggal",
+                      hint: "dd/mm/yyyy",
+                      readOnly: true,
+                      onTap: () => _selectDate(context),
+                      suffixIcon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2988EA).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 20,
+                          color: Color(0xFF2988EA),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Tanggal tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _lokasiController,
+                      label: "Lokasi",
+                      hint: "Masukkan lokasi",
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Lokasi tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _pjController,
+                      label: "Penanggung Jawab",
+                      hint: "Masukkan nama Penanggung Jawab",
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Penanggung Jawab tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(
+                      controller: _deskripsiController,
+                      label: "Deskripsi",
+                      hint: "Masukkan deskripsi kegiatan",
+                      maxLines: 4,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Deskripsi tidak boleh kosong';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 40),
+                    // Button Submit dengan gradient modern
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2988EA), Color(0xFF2563EB)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2988EA).withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 2,
                           ),
                         ],
                       ),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _updateKegiatan,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.save_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              "Simpan Perubahan",
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
@@ -672,3 +558,4 @@ class _EditKegiatanPageState extends State<EditKegiatanPage> {
     );
   }
 }
+

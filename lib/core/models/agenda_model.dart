@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 /// Model untuk Agenda (Kegiatan & Broadcast)
 class AgendaModel {
@@ -31,6 +32,10 @@ class AgendaModel {
   // From Firestore
   factory AgendaModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
+    debugPrint('📄 Parsing agenda: ${doc.id}');
+    debugPrint('   Data: $data');
+
     return AgendaModel(
       id: doc.id,
       judul: data['judul'] ?? data['title'] ?? '',
