@@ -4,11 +4,17 @@ import 'package:google_fonts/google_fonts.dart';
 class PengeluaranHeader extends StatelessWidget {
   final int totalItems;
   final String totalAmount;
+  final VoidCallback? onAddPressed;
+  final bool showAddButton;
+  final String? userRole;
 
   const PengeluaranHeader({
     super.key,
     required this.totalItems,
     required this.totalAmount,
+    this.onAddPressed,
+    this.showAddButton = false,
+    this.userRole,
   });
 
   @override
@@ -66,6 +72,44 @@ class PengeluaranHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
+        if (showAddButton && onAddPressed != null)
+          GestureDetector(
+            onTap: onAddPressed,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.add_rounded,
+                    color: Color(0xFF2988EA),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Tambah',
+                    style: GoogleFonts.poppins(
+                      color: const Color(0xFF2988EA),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -87,6 +131,8 @@ class PengeluaranHeader extends StatelessWidget {
   }
 
   Widget _buildTitle() {
+    final isAdminOrBendahara = userRole == 'Admin' || userRole == 'Bendahara';
+
     return Row(
       children: [
         Container(
@@ -111,7 +157,7 @@ class PengeluaranHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Laporan Pengeluaran',
+                isAdminOrBendahara ? 'Kelola Pengeluaran' : 'Laporan Pengeluaran',
                 style: GoogleFonts.poppins(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -121,7 +167,9 @@ class PengeluaranHeader extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Daftar laporan dari RT/RW',
+                isAdminOrBendahara
+                    ? 'Verifikasi & kelola pengeluaran'
+                    : 'Daftar laporan dari RT/RW',
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,

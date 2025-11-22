@@ -9,6 +9,7 @@ import '../../core/widgets/export_dialog.dart';
 import '../../core/services/keuangan_summary_service.dart';
 import '../../core/providers/jenis_iuran_provider.dart';
 import '../../core/providers/pemasukan_lain_provider.dart';
+import '../../core/providers/pengeluaran_provider.dart';
 import '../dashboard/dashboard_page.dart';
 import '../data_warga/data_penduduk/data_penduduk_page.dart';
 import '../agenda/kegiatan/kegiatan_page.dart';
@@ -143,6 +144,26 @@ class _KeuanganPageState extends State<KeuanganPage> {
     decimalDigits: 0,
   );
 
+  /// Format nominal menjadi format compact (Rb, Jt, M)
+  String _formatCompactCurrency(double amount) {
+    if (amount >= 1000000000) {
+      // Miliar
+      final value = amount / 1000000000;
+      return 'Rp ${value.toStringAsFixed(value >= 10 ? 1 : 2)} M';
+    } else if (amount >= 1000000) {
+      // Juta
+      final value = amount / 1000000;
+      return 'Rp ${value.toStringAsFixed(value >= 10 ? 1 : 2)} Jt';
+    } else if (amount >= 1000) {
+      // Ribu
+      final value = amount / 1000;
+      return 'Rp ${value.toStringAsFixed(value >= 10 ? 0 : 1)} Rb';
+    } else {
+      // Di bawah 1000
+      return 'Rp ${amount.toStringAsFixed(0)}';
+    }
+  }
+
   List<Map<String, dynamic>> get _filteredReports {
     // Pilih data berdasarkan tombol yang aktif
     final sourceData = _showPengeluaran ? _mockPengeluaran : _mockPemasukan;
@@ -165,14 +186,17 @@ class _KeuanganPageState extends State<KeuanganPage> {
       if (mounted) {
         final jenisIuranProvider = context.read<JenisIuranProvider>();
         final pemasukanLainProvider = context.read<PemasukanLainProvider>();
+        final pengeluaranProvider = context.read<PengeluaranProvider>();
 
         // Add listeners to reload data when providers notify
         jenisIuranProvider.addListener(_onProviderDataChanged);
         pemasukanLainProvider.addListener(_onProviderDataChanged);
+        pengeluaranProvider.addListener(_onProviderDataChanged);
 
         // Initial load
         jenisIuranProvider.fetchAllJenisIuran();
         pemasukanLainProvider.loadPemasukanLain();
+        pengeluaranProvider.loadPengeluaran();
       }
     });
 
@@ -181,7 +205,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
 
   void _onProviderDataChanged() {
     if (mounted) {
-      print('🔄 Keuangan Page: Provider data changed, reloading stats...');
+      debugPrint('🔄 Keuangan Page: Provider data changed, reloading stats...');
       _loadKeuanganData();
     }
   }
@@ -192,6 +216,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
     try {
       context.read<JenisIuranProvider>().removeListener(_onProviderDataChanged);
       context.read<PemasukanLainProvider>().removeListener(_onProviderDataChanged);
+      context.read<PengeluaranProvider>().removeListener(_onProviderDataChanged);
     } catch (e) {
       // Ignore if already disposed
     }
@@ -204,7 +229,8 @@ class _KeuanganPageState extends State<KeuanganPage> {
     });
 
     try {
-      print('🔄 Loading keuangan summary...');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('🔄 KEUANGAN PAGE: Loading keuangan summary...');
       final summary = await _keuanganService.getKeuanganSummary();
 
       if (mounted) {
@@ -217,10 +243,14 @@ class _KeuanganPageState extends State<KeuanganPage> {
           _growthPercentage = summary['growthPercentage'] ?? 0;
           _isLoadingKeuangan = false;
         });
-        print('✅ Keuangan summary loaded: Total Pemasukan = Rp ${_totalPemasukan.toStringAsFixed(0)}, Total Pengeluaran = Rp ${_totalPengeluaran.toStringAsFixed(0)}');
+        debugPrint('✅ KEUANGAN PAGE: Summary loaded successfully');
+        debugPrint('   📊 Total Pemasukan: Rp ${_totalPemasukan.toStringAsFixed(0)}');
+        debugPrint('   📊 Total Pengeluaran: Rp ${_totalPengeluaran.toStringAsFixed(0)}');
+        debugPrint('   📊 Total Asset: Rp ${_totalAsset.toStringAsFixed(0)}');
+        debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
     } catch (e) {
-      print('❌ Error loading keuangan summary: $e');
+      debugPrint('❌ KEUANGAN PAGE: Error loading keuangan summary: $e');
       if (mounted) {
         setState(() {
           _isLoadingKeuangan = false;
@@ -465,7 +495,9 @@ class _KeuanganPageState extends State<KeuanganPage> {
           ),
           const SizedBox(height: 20),
           Text(
-            _isAssetVisible ? 'Rp 100.000.000' : '••••••••••',
+            _isAssetVisible
+                ? (_isLoadingKeuangan ? 'Memuat...' : _formatCompactCurrency(_totalAsset))
+                : '••••••••••',
             style: GoogleFonts.poppins(
               fontSize: 36,
               fontWeight: FontWeight.w800,
@@ -624,7 +656,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
         Expanded(
           child: _buildKPICard(
             title: 'Total Pengeluaran',
-            amount: _isLoadingKeuangan ? 'Memuat...' : currencyFormat.format(_totalPengeluaran),
+            amount: _isLoadingKeuangan ? 'Memuat...' : _formatCompactCurrency(_totalPengeluaran),
             percentage: _pengeluaranPercentage,
             color: const Color(0xFFEF4444),
           ),
@@ -633,7 +665,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
         Expanded(
           child: _buildKPICard(
             title: 'Total Pemasukan',
-            amount: _isLoadingKeuangan ? 'Memuat...' : currencyFormat.format(_totalPemasukan),
+            amount: _isLoadingKeuangan ? 'Memuat...' : _formatCompactCurrency(_totalPemasukan),
             percentage: _pemasukanPercentage,
             color: const Color(0xFF10B981),
           ),
@@ -654,6 +686,8 @@ class _KeuanganPageState extends State<KeuanganPage> {
     final iconData = isPemasukan ? Icons.trending_up_rounded : Icons.trending_down_rounded;
 
     return Container(
+      // Fixed height untuk konsistensi
+      height: 305,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -684,6 +718,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
         ],
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Circular Progress (Donut) dengan design lebih modern
           SizedBox(
@@ -758,7 +793,7 @@ class _KeuanganPageState extends State<KeuanganPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           // Caption (Title)
           Text(
             title,
@@ -770,19 +805,31 @@ class _KeuanganPageState extends State<KeuanganPage> {
               letterSpacing: 0.2,
             ),
           ),
-          const SizedBox(height: 8),
-          // Amount (Nominal) dengan style lebih bold
-          Text(
-            amount,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: const Color(0xFF1F2937),
-              letterSpacing: -0.5,
+          const SizedBox(height: 6),
+          // Amount (Nominal) dengan constraint height untuk konsistensi
+          Container(
+            constraints: const BoxConstraints(
+              minHeight: 50,
+              maxHeight: 56,
+            ),
+            alignment: Alignment.center,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                amount,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1F2937),
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           // Cetak Button dengan design lebih modern
           SizedBox(
             width: double.infinity,

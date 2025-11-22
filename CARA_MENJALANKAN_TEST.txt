@@ -1,0 +1,366 @@
+================================================================================
+  🚀 CARA MENJALANKAN AUTOMATED TEST - DATA PENDUDUK
+================================================================================
+
+📋 APA YANG HARUS DIJALANKAN?
+────────────────────────────────────────────────────────────────────────────────
+
+File yang akan dijalankan:
+  📁 integration_test/data_penduduk/data_penduduk_crud_test.dart
+
+Test ini adalah FULLY AUTOMATED E2E test yang akan:
+  ✅ Login otomatis dengan admin@jawara.com / admin123
+  ✅ Navigate ke menu Data Penduduk otomatis
+  ✅ Create data baru otomatis
+  ✅ Read/view data list otomatis
+  ✅ Update data existing otomatis
+  ✅ Delete data otomatis
+
+================================================================================
+  ⚡ CARA MENJALANKAN (PILIH SALAH SATU)
+================================================================================
+
+METHOD 1: ANDROID EMULATOR (RECOMMENDED!) ⭐
+────────────────────────────────────────────────────────────────────────────────
+1. Pastikan emulator Android sudah running
+2. Buka Terminal/PowerShell
+3. Jalankan command:
+
+   flutter drive --driver=test_driver/integration_test.dart \
+     --target=integration_test/data_penduduk/data_penduduk_crud_test.dart
+
+4. Tunggu app terinstall di emulator
+5. Lihat test berjalan OTOMATIS!
+6. Check hasil di console
+
+KEUNTUNGAN:
+  ✅ Paling reliable untuk integration test
+  ✅ Support penuh untuk semua fitur
+  ✅ Visual debugging mudah
+
+────────────────────────────────────────────────────────────────────────────────
+
+METHOD 2: DOUBLE-CLICK BATCH FILE (TERMUDAH!)
+────────────────────────────────────────────────────────────────────────────────
+1. Double-click file: run_automated_test_android.bat
+2. Tunggu app terinstall di emulator
+3. Lihat test berjalan OTOMATIS!
+
+────────────────────────────────────────────────────────────────────────────────
+
+METHOD 3: CHROME BROWSER (CEPAT!)
+────────────────────────────────────────────────────────────────────────────────
+1. Buka Terminal/PowerShell
+2. Jalankan command:
+
+   flutter drive --driver=test_driver/integration_test.dart \
+     --target=integration_test/data_penduduk/data_penduduk_crud_test.dart \
+     -d chrome
+
+3. Tunggu Chrome terbuka
+4. Lihat test berjalan OTOMATIS!
+
+ATAU double-click: run_automated_test_web.bat
+
+================================================================================
+  📊 APA YANG AKAN TERJADI?
+================================================================================
+
+Saat test berjalan, Anda akan melihat di console:
+
+Phase 1: 🔐 AUTO-LOGIN
+────────────────────────────────────────────────────────────────────────────────
+🔵 Starting application...
+✅ App started
+
+🔵 Checking for intro screen...
+ℹ️  No intro screen found
+
+🔵 Navigating to login page...
+✅ On login page
+
+🔵 Filling login credentials AUTOMATICALLY...
+📧 Email: admin@jawara.com
+🔑 Password: admin123
+
+🔵 Entering email...
+✅ Email entered
+
+🔵 Entering password...
+✅ Password entered
+
+🔵 Tapping login button...
+✅ Login successful!
+
+✅ PHASE 1 COMPLETED: Auto-login successful!
+
+────────────────────────────────────────────────────────────────────────────────
+
+Phase 2: 📍 AUTO-NAVIGATE
+────────────────────────────────────────────────────────────────────────────────
+🔵 Looking for Data Warga menu...
+📍 Method 1: Found "Data Warga" text, tapping...
+✅ Navigated via text
+
+✅ PHASE 2 COMPLETED: On Data Penduduk page!
+
+────────────────────────────────────────────────────────────────────────────────
+
+Phase 3: 📖 AUTO-READ
+────────────────────────────────────────────────────────────────────────────────
+🔍 Counting total penduduk...
+📊 Total penduduk: X
+✅ PHASE 3 COMPLETED: Data viewed successfully!
+
+────────────────────────────────────────────────────────────────────────────────
+
+Phase 4: ➕ AUTO-CREATE
+────────────────────────────────────────────────────────────────────────────────
+🔵 Tapping Tambah button...
+✅ Tambah button tapped
+
+🔵 Filling form with test data...
+📝 Entering NIK: 32011700123456789
+📝 Entering Nama: E2E Test 1700123456789
+📝 Entering Tempat Lahir: Jakarta
+📝 Entering Tanggal Lahir: 01/01/1990
+✅ Form filled
+
+🔵 Saving new penduduk...
+✅ Simpan tapped
+
+✅ PHASE 4 COMPLETED: Penduduk created!
+
+────────────────────────────────────────────────────────────────────────────────
+
+Phase 5: ✏️ AUTO-UPDATE
+────────────────────────────────────────────────────────────────────────────────
+🔵 Tapping Edit button on first penduduk...
+✅ Edit button tapped
+
+🔵 Updating penduduk data...
+✅ Form filled
+
+🔵 Saving updated data...
+✅ Simpan tapped
+
+✅ PHASE 5 COMPLETED: Data updated!
+
+────────────────────────────────────────────────────────────────────────────────
+
+Phase 6: 🗑️ AUTO-DELETE
+────────────────────────────────────────────────────────────────────────────────
+🔵 Tapping Delete button on first penduduk...
+✅ Delete button tapped
+
+🔵 Confirming delete...
+✅ Delete confirmed
+
+✅ PHASE 6 COMPLETED: Delete operation done!
+
+────────────────────────────────────────────────────────────────────────────────
+
+FINAL SUMMARY:
+────────────────────────────────────────────────────────────────────────────────
+================================================================================
+  🎉 ALL PHASES COMPLETED SUCCESSFULLY!
+================================================================================
+
+📊 TEST SUMMARY:
+  ✅ Phase 1: Login - SUCCESS
+  ✅ Phase 2: Navigate - SUCCESS
+  ✅ Phase 3: READ (View) - SUCCESS
+  ✅ Phase 4: CREATE (Add) - SUCCESS
+  ✅ Phase 5: UPDATE (Edit) - SUCCESS
+  ✅ Phase 6: DELETE (Remove) - SUCCESS
+
+  🏆 100% CRUD OPERATIONS COMPLETED!
+================================================================================
+
+🏁 Test execution completed!
+
+================================================================================
+  ⚠️ PERSYARATAN SEBELUM RUN TEST
+================================================================================
+
+1. ✅ Admin account harus ada di Firestore
+   ─────────────────────────────────────────────────────────────────────────
+   Collection: users
+   Document: [auto-generated]
+   Fields:
+     - email: "admin@jawara.com"
+     - password: [hashed dari admin123]
+     - role: "admin"
+     - nama: "Administrator"
+
+2. ✅ Internet connection aktif (untuk Firebase)
+
+3. ✅ Emulator Android running (untuk method 1)
+   ATAU Chrome terinstall (untuk method 3)
+
+4. ✅ Test driver ada: test_driver/integration_test.dart ✅ SUDAH ADA!
+
+================================================================================
+  📝 COMMAND LENGKAP
+================================================================================
+
+ANDROID (Recommended):
+────────────────────────────────────────────────────────────────────────────────
+cd "C:\Peyimpanan Pribadi\Data D\New folder (2)\Semester 5\PBL 2025"
+
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/data_penduduk/data_penduduk_crud_test.dart
+
+────────────────────────────────────────────────────────────────────────────────
+
+CHROME (Alternative):
+────────────────────────────────────────────────────────────────────────────────
+cd "C:\Peyimpanan Pribadi\Data D\New folder (2)\Semester 5\PBL 2025"
+
+flutter drive --driver=test_driver/integration_test.dart --target=integration_test/data_penduduk/data_penduduk_crud_test.dart -d chrome
+
+================================================================================
+  💡 TIPS SAAT MENJALANKAN TEST
+================================================================================
+
+1. ✨ JANGAN minimize atau close window app saat test berjalan
+2. ✨ JANGAN tap/click apapun di app - biarkan test berjalan sendiri
+3. ✨ Lihat console untuk melihat progress test
+4. ✨ Test memakan waktu sekitar 2-5 menit untuk complete
+5. ✨ Jika test gagal, baca error message di console
+6. ✨ Test bisa dijalankan berulang kali tanpa masalah
+
+================================================================================
+  🔧 TROUBLESHOOTING
+================================================================================
+
+❌ Error: No devices found
+✅ Solution:
+   - Untuk Android: Start emulator terlebih dahulu
+   - Untuk Chrome: Pastikan Chrome terinstall
+   - Run: flutter devices (untuk check device tersedia)
+
+❌ Error: Login gagal
+✅ Solution:
+   - Check admin account di Firestore
+   - Pastikan email: admin@jawara.com
+   - Pastikan role: admin
+   - Pastikan internet connection aktif
+
+❌ Error: Build failed
+✅ Solution:
+   - Run: flutter clean
+   - Run: flutter pub get
+   - Coba lagi
+
+❌ Test stuck atau timeout
+✅ Solution:
+   - Check internet connection
+   - Restart emulator
+   - Coba lagi
+
+❌ App crash saat test
+✅ Solution:
+   - Check console error message
+   - Pastikan app bisa run normal (flutter run)
+   - Check Firebase configuration
+
+================================================================================
+  🎯 LANGKAH-LANGKAH MENJALANKAN
+================================================================================
+
+STEP 1: Persiapan
+────────────────────────────────────────────────────────────────────────────────
+[ ] Pastikan emulator Android sudah running
+    Command: flutter devices (check emulator aktif)
+
+[ ] Pastikan admin account ada di Firestore
+    Email: admin@jawara.com
+    Role: admin
+
+[ ] Pastikan internet connection aktif
+
+────────────────────────────────────────────────────────────────────────────────
+
+STEP 2: Buka Terminal
+────────────────────────────────────────────────────────────────────────────────
+[ ] Buka PowerShell atau Command Prompt
+
+[ ] Navigate ke folder project:
+    cd "C:\Peyimpanan Pribadi\Data D\New folder (2)\Semester 5\PBL 2025"
+
+────────────────────────────────────────────────────────────────────────────────
+
+STEP 3: Run Test
+────────────────────────────────────────────────────────────────────────────────
+[ ] Copy & paste command ini:
+
+    flutter drive --driver=test_driver/integration_test.dart --target=integration_test/data_penduduk/data_penduduk_crud_test.dart
+
+[ ] Press Enter
+
+────────────────────────────────────────────────────────────────────────────────
+
+STEP 4: Tunggu & Observe
+────────────────────────────────────────────────────────────────────────────────
+[ ] Tunggu app building & installing di emulator (1-2 menit)
+
+[ ] Lihat app terbuka di emulator
+
+[ ] Lihat test berjalan OTOMATIS (JANGAN klik apapun!)
+
+[ ] Lihat console output menunjukkan progress
+
+────────────────────────────────────────────────────────────────────────────────
+
+STEP 5: Verify Results
+────────────────────────────────────────────────────────────────────────────────
+[ ] Check console output untuk "ALL PHASES COMPLETED SUCCESSFULLY!"
+
+[ ] Verify semua 6 phases SUCCESS
+
+[ ] Check tidak ada error di console
+
+✅ JIKA SEMUA SUKSES = TEST BERHASIL! 🎉
+
+❌ JIKA ADA ERROR = Lihat troubleshooting di atas
+
+================================================================================
+  📖 DOKUMENTASI LENGKAP
+================================================================================
+
+Untuk informasi lebih detail, baca:
+
+  📄 README_AUTOMATED_TEST.md           - Quick start guide
+  📄 AUTOMATED_TEST_FINAL_SETUP.txt     - Complete setup
+  📄 AUTOMATED_TEST_GUIDE.md            - Full guide & features
+  📄 CARA_RUN_AUTOMATED_TEST.md         - Step-by-step tutorial
+  📄 QUICK_REFERENCE_AUTOMATED_TEST.txt - Quick reference
+  📄 IMPLEMENTATION_CHECKLIST.txt       - Implementation checklist
+
+================================================================================
+  🏆 KESIMPULAN
+================================================================================
+
+Yang perlu Anda jalankan:
+  📁 File: integration_test/data_penduduk/data_penduduk_crud_test.dart
+
+Cara termudah:
+  1. Pastikan emulator Android running
+  2. Buka terminal
+  3. Run command:
+     flutter drive --driver=test_driver/integration_test.dart \
+       --target=integration_test/data_penduduk/data_penduduk_crud_test.dart
+  4. Tunggu & lihat test berjalan otomatis!
+  5. Check hasil di console
+
+Test ini adalah FULLY AUTOMATED - Anda tidak perlu klik apapun!
+Test akan login, navigate, dan CRUD semuanya OTOMATIS!
+
+================================================================================
+
+Created by: GitHub Copilot
+Date: November 21, 2025
+Status: ✅ READY TO RUN!
+
+================================================================================
+

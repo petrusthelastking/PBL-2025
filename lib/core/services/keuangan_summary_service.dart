@@ -55,6 +55,9 @@ class KeuanganSummaryService {
   /// Get total pengeluaran yang terverifikasi
   Future<double> getTotalPengeluaran() async {
     try {
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('🔄 Calculating total pengeluaran (TERVERIFIKASI ONLY)...');
+
       final snapshot = await _firestore
           .collection('pengeluaran')
           .where('isActive', isEqualTo: true)
@@ -62,13 +65,20 @@ class KeuanganSummaryService {
           .get();
 
       double total = 0;
+      int count = 0;
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final nominal = (data['nominal'] as num?)?.toDouble() ?? 0;
+        final name = data['name'] ?? 'Unknown';
+        final status = data['status'] ?? 'Unknown';
         total += nominal;
+        count++;
+        debugPrint('   - [$status] $name: Rp ${nominal.toStringAsFixed(0)}');
       }
 
-      debugPrint('✅ Total Pengeluaran: Rp ${total.toStringAsFixed(0)}');
+      debugPrint('   📊 Total Items: $count');
+      debugPrint('   💰 TOTAL PENGELUARAN TERVERIFIKASI: Rp ${total.toStringAsFixed(0)}');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       return total;
     } catch (e) {
       debugPrint('❌ Error getting total pengeluaran: $e');

@@ -1,0 +1,148 @@
+📍 LOKASI TOMBOL VERIFIKASI - VISUAL GUIDE
+═══════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────┐
+│  ← [Back]                   [Tambah]  [Filter] │ <- HEADER (Biru)
+│                                                 │
+│  💰 Kelola Pengeluaran                          │
+│                                                 │
+│  ┌─────────────────────────────────────────┐   │
+│  │  Total: Rp 5.000.000                    │   │
+│  │  150 Pengeluaran                        │   │
+│  └─────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────┤
+│  🔍 [Cari pengeluaran...]                      │ <- SEARCH BAR
+├─────────────────────────────────────────────────┤
+│  [Semua] [Menunggu] [Terverifikasi] [Ditolak] │ <- FILTER CHIPS
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  ┌───────────────────────────────────────┐     │
+│  │ 💼  Operasional     🟡 Menunggu       │     │
+│  │     Bayar Listrik                     │     │
+��  │     Rp 500.000                        │     │
+│  │     15 Nov 2025                       │     │
+│  └───────────────────────────────────────┘     │
+│                                                 │
+│  ┌───────────────────────────────────────┐     │
+│  │ 🏗️  Infrastruktur  🟡 Menunggu       │     │
+│  │     Perbaikan Jalan                   │     │
+│  │     Rp 2.000.000                      │     │
+│  │     14 Nov 2025                       │     │
+│  └───────────────────────────────────────┘     │
+│                                                 │
+│  ┌───────────────────────────────────────┐     │
+│  │ ⚡  Utilitas        🟢 Terverifikasi  │     │
+│  │     Bayar Air                         │     │
+│  │     Rp 300.000                        │     │
+│  │     13 Nov 2025                       │     │
+│  └───────────────────────────────────────┘     │
+│                                                 │
+│                                                 │
+│                                                 │
+│                            ┌────────────────┐  │
+│                            │  ✓            │  │ <- TOMBOL INI!
+│                            │     Verifikasi│  │    (Hijau #10B981)
+│                            │         (5)   │  │    Badge merah: 5
+│                            └────────────────┘  │
+└─────────────────────────────────────────────────┘
+       ↑
+       └─ FLOATING ACTION BUTTON (FAB)
+          - Posisi: KANAN BAWAH
+          - Warna: HIJAU
+          - Icon: ✓ (verified_rounded)
+          - Badge: Jumlah pending (merah)
+
+
+═══════════════════════════════════════════════════════════
+KETIKA TOMBOL DIKLIK:
+═══════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│                                                 │
+│  [Daftar pengeluaran...]                       │
+│                                                 │
+│                                                 │
+├═════════════════════════════════════════════════┤ <- BOTTOM SHEET
+│  ═════                                          │    MUNCUL DARI BAWAH!
+│  ┌─────────────────────────────────────────┐   │
+│  │ ✓  Verifikasi Pengeluaran               │   │ <- Header (Hijau)
+│  │    5 Menunggu                     [×]   │   │
+│  └─────────────���───────────────────────────┘   │
+│                                                 │
+│  ┌───────────────────────────────────────┐     │
+│  │ 💼  Operasional                       │     │
+│  │     Bayar Listrik        15 Nov 2025  │     │
+│  │     💰 Rp 500.000                     │     │
+│  │     Penerima: PLN                     │     │
+│  │     ─────────────────────────────────  │     │
+│  │  [✓ Verifikasi]  [× Tolak]           │     │ <- TOMBOL AKSI
+│  └───────────────────────────────────────┘     │
+│                                                 │
+│  ┌───────────────────────────────────────┐     │
+│  │ 🏗️  Infrastruktur                     │     │
+│  │     Perbaikan Jalan      14 Nov 2025  │     │
+│  │     💰 Rp 2.000.000                   │     │
+│  │     ─────────────────────────────────  │     │
+│  │  [✓ Verifikasi]  [× Tolak]           │     │
+│  └───────────────────────────────────────┘     │
+│                                                 │
+│  [Scroll untuk lebih banyak...]                │
+│                                                 │
+└─────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════
+SETELAH KLIK "VERIFIKASI":
+═══════════════════════════════════════════════════════════
+
+       ┌─────────────────────────────┐
+       │  ⏳  Memverifikasi...        │ <- LOADING DIALOG
+       │      Mohon tunggu sebentar  │
+       └─────────────────────────────┘
+
+              ↓ (1-2 detik)
+
+       ┌─────────────────────────────┐
+       │  ✓  Pengeluaran berhasil    │ <- SNACKBAR SUKSES
+       │     diverifikasi!           │    (Hijau, muncul di bawah)
+       └─────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════
+ROLE & AKSES:
+═══════════════════════════════════════════════════════════
+
+👤 ADMIN:
+  ✅ Lihat tombol verifikasi (hijau, kanan bawah)
+  ✅ Bisa verifikasi/tolak pengeluaran
+  ❌ Tidak bisa tambah pengeluaran
+  ❌ Tidak bisa edit/hapus pengeluaran
+
+👤 BENDAHARA:
+  ✅ Lihat tombol verifikasi (hijau, kanan bawah)
+  ✅ Bisa verifikasi/tolak pengeluaran
+  ✅ Bisa tambah pengeluaran (tombol "Tambah" di header)
+  ✅ Bisa edit pengeluaran (dalam card)
+  ✅ Bisa hapus pengeluaran (dalam card)
+
+👤 RT/RW/Warga:
+  ❌ Tidak lihat tombol verifikasi
+  ❌ Tidak bisa verifikasi
+
+
+═══════════════════════════════════════════════════════════
+CATATAN PENTING:
+═══════════════════════════════════════════════════════════
+
+1. Tombol verifikasi ADA DI KANAN BAWAH (FAB)
+2. Tombol berwarna HIJAU dengan icon ✓
+3. Badge merah menunjukkan jumlah pengeluaran menunggu
+4. Klik tombol → Bottom sheet muncul dari bawah
+5. Bottom sheet bisa di-drag (geser) naik/turun
+6. Setiap card punya tombol Verifikasi & Tolak
+7. Loading muncul saat proses verifikasi
+8. Snackbar muncul setelah berhasil
+
+═══════════════════════════════════════════════════════════
+
